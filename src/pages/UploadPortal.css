@@ -153,6 +153,57 @@
   font-size: 0.82rem;
 }
 
+/* ── Upload Apps Grid ── */
+.upload-apps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.upload-app-card {
+  background: #161b22;
+  border: 1px solid #21262d;
+  border-radius: 8px;
+  padding: 1.25rem;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.upload-app-card:hover {
+  border-color: #30363d;
+  background: #1c2128;
+}
+
+.upload-app-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.upload-app-card h3 {
+  font-size: 0.85rem;
+  color: #e6edf3;
+  margin: 0 0 0.75rem 0;
+  line-height: 1.2;
+}
+
+.upload-btn {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #238636;
+  background: #238636;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.upload-btn:hover {
+  background: #2ea043;
+}
+
 /* ── File list ── */
 .file-list h2 {
   font-size: 1rem;

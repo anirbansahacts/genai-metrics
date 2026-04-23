@@ -3,13 +3,40 @@ import './UploadPortal.css'
 
 const UPLOAD_PASSWORD = 'genai2024'
 
+const apps = [
+  {
+    id: 'ghcp-interaction',
+    title: 'GHCP Interaction Usage',
+    icon: '📊',
+  },
+  {
+    id: 'copilot-usage',
+    title: 'CoPilot Usage Report',
+    icon: '🤖',
+  },
+  {
+    id: 'weekly-status',
+    title: 'Weekly Status Report',
+    icon: '📅',
+  },
+  {
+    id: 'sprint-productivity',
+    title: 'Sprint Productivity',
+    icon: '⚡',
+  },
+  {
+    id: 'copilot-vs-git',
+    title: 'Copilot vs Git Analytics',
+    icon: '🔀',
+  },
+]
+
 export default function UploadPortal() {
   const [authenticated, setAuthenticated] = useState(false)
   const [passwordInput, setPasswordInput] = useState('')
   const [authError, setAuthError] = useState('')
-  const [dragOver, setDragOver] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState([])
-  const fileInputRef = useRef(null)
+  const fileInputRefs = useRef(apps.reduce((acc, app) => ({ ...acc, [app.id]: null }), {}))
 
   function handleLogin(e) {
     e.preventDefault()
@@ -22,24 +49,19 @@ export default function UploadPortal() {
     }
   }
 
-  function handleFiles(files) {
+  function handleFiles(files, appId) {
     const newFiles = Array.from(files).map((file) => ({
       name: file.name,
       size: (file.size / 1024).toFixed(1) + ' KB',
       type: file.type || 'unknown',
       addedAt: new Date().toLocaleTimeString(),
+      app: apps.find(app => app.id === appId)?.title || 'Unknown',
     }))
     setUploadedFiles((prev) => [...prev, ...newFiles])
   }
 
-  function handleDrop(e) {
-    e.preventDefault()
-    setDragOver(false)
-    handleFiles(e.dataTransfer.files)
-  }
-
-  function handleFileInputChange(e) {
-    handleFiles(e.target.files)
+  function handleFileInputChange(e, appId) {
+    handleFiles(e.target.files, appId)
     e.target.value = ''
   }
 
@@ -81,26 +103,27 @@ export default function UploadPortal() {
         </button>
       </div>
 
-      <div
-        className={`drop-zone ${dragOver ? 'drag-over' : ''}`}
-        onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={handleDrop}
-        onClick={() => fileInputRef.current.click()}
-      >
-        <div className="drop-zone-content">
-          <span className="drop-icon">📂</span>
-          <p>Drag &amp; drop files here, or click to select</p>
-          <span className="drop-hint">Supports .xlsx, .csv, .json</span>
-        </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          accept=".xlsx,.csv,.json"
-          onChange={handleFileInputChange}
-          style={{ display: 'none' }}
-        />
+      <div className="upload-apps-grid">
+        {apps.map((app) => (
+          <div key={app.id} className="upload-app-card">
+            <div className="upload-app-icon">{app.icon}</div>
+            <h3>{app.title}</h3>
+            <button
+              className="upload-btn"
+              onClick={() => fileInputRefs.current[app.id]?.click()}
+            >
+              Upload Files
+            </button>
+            <input
+              ref={(el) => fileInputRefs.current[app.id] = el}
+              type="file"
+              multiple
+              accept=".xlsx,.csv,.json"
+              onChange={(e) => handleFileInputChange(e, app.id)}
+              style={{ display: 'none' }}
+            />
+          </div>
+        ))}
       </div>
 
       {uploadedFiles.length > 0 && (
