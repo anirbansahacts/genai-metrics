@@ -1,0 +1,2013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BatchFlow Manager | Cognizant × Verizon</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23071540'/%3E%3Crect x='4' y='22' width='7' height='6' rx='1' fill='%2394a3b8'/%3E%3Crect x='13' y='15' width='7' height='13' rx='1' fill='%233b82f6'/%3E%3Crect x='22' y='8' width='6' height='20' rx='1' fill='%2356d364'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #0e2a5e; --navy-dark: #071540; --navy-mid: #163977;
+      --red: #d32f2f; --red-light: #fff5f5;
+      --green: #16a34a; --green-dark: #14532d; --green-light: #f0fdf4; --green-border: #bbf7d0;
+      --amber: #b45309; --amber-light: #fffbeb; --amber-border: #fde68a;
+      --blue: #1d4ed8; --blue-light: #eff6ff; --blue-border: #bfdbfe;
+      --pink-header: #F2CEEF;
+      --bg: #f0f4f8; --surface: #ffffff;
+      --border: #e2e8f0; --border-dark: #cbd5e1;
+      --text: #0f172a; --text-muted: #475569; --text-faint: #94a3b8;
+      --log-bg: #0d1117; --log-text: #c9d1d9;
+      --log-info: #79c0ff; --log-success: #56d364; --log-warn: #e3b341; --log-error: #ff7b72;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+      --shadow: 0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+      --shadow-md: 0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.05);
+      --shadow-lg: 0 10px 15px rgba(0,0,0,.1),0 4px 6px rgba(0,0,0,.05);
+      --radius-sm: 8px; --radius: 12px; --radius-lg: 16px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── HEADER ── */
+    .app-header {
+      background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 60%, var(--navy-mid) 100%);
+      color: white;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.35);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .header-inner {
+      max-width: 1280px; margin: 0 auto;
+      padding: 18px 32px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .header-left { display: flex; align-items: center; gap: 14px; }
+    .header-left:hover .header-icon { transform: scale(1.18); }
+    .header-icon {
+      width: 46px; height: 46px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: var(--radius);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+      transition: transform .2s ease;
+    }
+    .header-title { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; line-height: 1.2; }
+    .header-sub { font-size: 11px; color: rgba(255,255,255,0.55); font-weight: 500; letter-spacing: 0.8px; text-transform: uppercase; margin-top: 2px; }
+    .header-right { display: flex; gap: 8px; flex-shrink: 0; }
+    .chip {
+      padding: 5px 12px; border-radius: 20px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+    }
+    .chip-phase { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.9); border: 1px solid rgba(255,255,255,0.18); }
+    .chip-tasks { background: var(--red); color: white; }
+    .chip-secure { background: rgba(86,211,100,0.18); color: #56d364; border: 1px solid rgba(86,211,100,0.3); }
+
+    /* ── LAYOUT ── */
+    .main { max-width: 1280px; margin: 0 auto; padding: 28px 32px 48px; }
+    .section-label {
+      font-size: 10px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-label::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* ── UPLOAD GRID ── */
+    .upload-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+
+    .upload-card {
+      background: var(--surface);
+      border: 2px dashed var(--border-dark);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      position: relative; cursor: pointer;
+      transition: border-color .2s, background .2s, box-shadow .2s;
+    }
+    .upload-card:hover { border-color: #93c5fd; box-shadow: var(--shadow-md); }
+    .upload-card.drag-over { border-color: var(--blue); background: #f0f7ff; box-shadow: 0 0 0 3px rgba(29,78,216,.12); }
+    .upload-card.file-ok { border-style: solid; border-color: var(--green); background: var(--green-light); }
+    .upload-card.file-err { border-style: solid; border-color: var(--red); background: var(--red-light); }
+    .upload-card input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+
+    .card-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+    .card-ico {
+      width: 38px; height: 38px; border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .ico-req { background: #dbeafe; }
+    .ico-opt { background: #fef3c7; }
+
+    .card-ttl { font-size: 13px; font-weight: 700; line-height: 1.3; }
+    .card-desc { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; }
+    .req-tag {
+      display: inline-flex; align-items: center;
+      font-size: 9.5px; font-weight: 800; padding: 2px 7px; border-radius: 4px;
+      letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px;
+    }
+    .tag-req { background: #dbeafe; color: #1e40af; }
+    .tag-opt { background: #fef3c7; color: #92400e; }
+
+    .upload-hint {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11.5px; color: var(--text-faint); margin-top: 10px;
+    }
+    .upload-status {
+      margin-top: 10px; padding: 8px 12px; border-radius: var(--radius-sm);
+      font-size: 11.5px; font-weight: 600;
+      display: none; align-items: center; gap: 7px;
+      word-break: break-all; line-height: 1.4;
+    }
+    .upload-status.show { display: flex; }
+    .upload-status.ok { background: #dcfce7; color: #15803d; }
+    .upload-status.err { background: #fee2e2; color: #b91c1c; }
+    .file-size-tag { font-weight: 400; color: #166534; margin-left: auto; flex-shrink: 0; white-space: nowrap; }
+
+    /* ── SCENARIO CARD ── */
+    .scenario-card {
+      background: var(--surface); border-radius: var(--radius-lg);
+      padding: 20px 24px; margin-bottom: 20px;
+      box-shadow: var(--shadow); border: 1px solid var(--border);
+    }
+    .scenario-body { display: flex; align-items: flex-start; gap: 14px; }
+    .scenario-ico { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+    .scenario-info { flex: 1; }
+    .scenario-title { font-size: 14px; font-weight: 700; }
+    .scenario-desc { font-size: 12.5px; color: var(--text-muted); margin-top: 3px; line-height: 1.5; }
+    .task-pills { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+    .task-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 700;
+    }
+    .pill-run { background: var(--blue-light); color: var(--blue); border: 1px solid var(--blue-border); }
+    .pill-skip { background: var(--bg); color: var(--text-faint); border: 1px solid var(--border); }
+    .pill-err { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+
+    /* ── PROCESS BUTTON ── */
+    .btn-process {
+      width: 100%; padding: 15px 32px;
+      background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 50%, #1e40af 100%);
+      color: white; border: none; border-radius: var(--radius);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 15px; font-weight: 700; letter-spacing: 0.2px;
+      cursor: pointer; transition: all .2s;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      box-shadow: 0 4px 14px rgba(14,42,94,.35);
+    }
+    .btn-process:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(14,42,94,.45); }
+    .btn-process:active:not(:disabled) { transform: translateY(0); }
+    .btn-process:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-process.running { background: linear-gradient(135deg, #374151, #4b5563); }
+
+    /* ── PROGRESS ── */
+    .progress-wrap { display: none; margin-top: 16px; }
+    .progress-wrap.show { display: block; }
+    .progress-meta { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px; font-weight: 600; }
+    .progress-meta .pct { color: var(--text-muted); }
+    .progress-track { height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+    .progress-fill {
+      height: 100%; border-radius: 99px;
+      background: linear-gradient(90deg, var(--navy) 0%, #3b82f6 100%);
+      transition: width .35s ease;
+    }
+
+    /* ── LOG ── */
+    .log-card {
+      background: var(--surface); border-radius: var(--radius-lg);
+      overflow: hidden; margin-bottom: 20px;
+      box-shadow: var(--shadow); border: 1px solid var(--border);
+    }
+    .log-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px;
+      background: #1a1f2e; border-bottom: 1px solid #30363d;
+    }
+    .log-title { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #8b949e; }
+    .log-dots { display: flex; gap: 5px; }
+    .log-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; } .dot-y { background: #ffbd2e; } .dot-g { background: #28c840; }
+    .log-actions { display: flex; gap: 8px; }
+    .btn-log-action {
+      font-size: 10.5px; font-weight: 600; color: #8b949e;
+      background: none; border: 1px solid #30363d;
+      padding: 3px 9px; border-radius: 5px; cursor: pointer;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: color .15s, border-color .15s;
+    }
+    .btn-log-action:hover { color: #c9d1d9; border-color: #6e7681; }
+    .log-body {
+      background: var(--log-bg); padding: 14px 16px;
+      height: 220px; overflow-y: auto;
+      font-family: 'JetBrains Mono', monospace; font-size: 11.5px; line-height: 1.75;
+      scrollbar-width: thin; scrollbar-color: #30363d transparent;
+    }
+    .log-body::-webkit-scrollbar { width: 5px; }
+    .log-body::-webkit-scrollbar-track { background: transparent; }
+    .log-body::-webkit-scrollbar-thumb { background: #30363d; border-radius: 99px; }
+    .log-line { display: flex; gap: 12px; }
+    .log-ts { color: #484f58; flex-shrink: 0; font-size: 10.5px; padding-top: 1px; }
+    .log-txt { flex: 1; word-break: break-word; }
+    .log-line.INFO .log-txt { color: var(--log-info); }
+    .log-line.SUCCESS .log-txt { color: var(--log-success); }
+    .log-line.WARN .log-txt { color: var(--log-warn); }
+    .log-line.ERROR .log-txt { color: var(--log-error); }
+    .log-line.PLAIN .log-txt { color: var(--log-text); }
+
+    /* ── RESULTS ── */
+    .results-card {
+      display: none; background: var(--surface); border-radius: var(--radius-lg);
+      padding: 24px; margin-bottom: 20px;
+      box-shadow: var(--shadow-md); border: 1px solid var(--green-border);
+      animation: slideIn .3s ease;
+    }
+    .results-card.show { display: block; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .results-top { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 20px; }
+    .result-success-ico {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(34,197,94,.35);
+    }
+    .result-title { font-size: 20px; font-weight: 800; color: var(--green-dark); }
+    .result-sub { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+
+    .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 20px; }
+    .stat-box { background: var(--bg); border-radius: var(--radius); padding: 14px 16px; }
+    .stat-num { font-size: 26px; font-weight: 800; color: var(--navy); letter-spacing: -0.5px; }
+    .stat-lbl { font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin-top: 2px; }
+
+    .dl-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+    .dl-card {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 18px; border-radius: var(--radius);
+      background: #f0fdf4; border: 1px solid var(--green-border);
+      flex: 1; min-width: 260px;
+    }
+    .dl-file-ico { font-size: 30px; flex-shrink: 0; }
+    .dl-info { flex: 1; }
+    .dl-fname { font-size: 13px; font-weight: 700; }
+    .dl-fmeta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .btn-dl {
+      padding: 9px 18px; background: var(--green); color: white; border: none;
+      border-radius: var(--radius-sm); font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 12.5px; font-weight: 700; cursor: pointer; transition: background .15s;
+      white-space: nowrap;
+    }
+    .btn-dl:hover { background: #15803d; }
+
+    .pink-note {
+      display: flex; align-items: center; gap: 8px; margin-top: 16px;
+      font-size: 12px; color: var(--text-muted);
+    }
+    .pink-swatch {
+      display: inline-block; width: 14px; height: 14px; border-radius: 3px;
+      background: #F2CEEF; border: 1px solid #d4b8d1; flex-shrink: 0;
+    }
+
+    /* ── SPINNER ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      display: inline-block; width: 16px; height: 16px;
+      border: 2.5px solid rgba(255,255,255,.35);
+      border-top-color: white; border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+
+    /* ── FOOTER ── */
+    .app-footer {
+      text-align: center; padding: 24px 32px;
+      font-size: 11.5px; color: var(--text-faint);
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .app-footer strong { color: var(--text-muted); }
+
+    /* ── HEADER BUTTON GLOW ANIMATION ── */
+    @keyframes btn-glow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+      50%       { box-shadow: 0 0 8px 3px rgba(255,255,255,0.18); }
+    }
+    @keyframes gear-spin {
+      0%   { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* ── THEME TOGGLE ── */
+    .btn-theme-toggle {
+      width: 36px; height: 36px; border-radius: 50%; padding: 0;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.22);
+      cursor: pointer; font-size: 17px; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .2s, transform .3s, box-shadow .2s;
+      flex-shrink: 0;
+    }
+    .btn-theme-toggle:hover {
+      background: rgba(255,255,255,0.22);
+      transform: rotate(22deg) scale(1.12);
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.12);
+    }
+
+    /* ── INFO BUTTON ── */
+    .btn-info-toggle {
+      width: 36px; height: 36px; border-radius: 50%; padding: 0;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.22);
+      cursor: pointer; font-size: 17px; font-weight: 400;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: rgba(255,255,255,0.9); line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .2s, transform .2s, box-shadow .2s;
+      flex-shrink: 0;
+    }
+    .btn-info-toggle:hover {
+      background: rgba(255,255,255,0.22);
+      transform: rotate(30deg) scale(1.12);
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.12);
+    }
+
+    /* ── JOB INFO MODAL ── */
+    .info-overlay {
+      position: fixed; inset: 0; z-index: 500;
+      background: rgba(7,21,64,0.55);
+      backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity .2s;
+    }
+    .info-overlay.open { opacity: 1; pointer-events: all; }
+    .info-modal {
+      background: var(--surface); border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg); padding: 28px 28px 24px;
+      width: min(580px, 92vw);
+      transform: translateY(10px); transition: transform .2s;
+    }
+    .info-overlay.open .info-modal { transform: translateY(0); }
+    .info-modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .info-modal-title { font-size: 15px; font-weight: 800; color: var(--text); }
+    .info-modal-close {
+      width: 30px; height: 30px; border-radius: 50%; border: none;
+      background: var(--border); cursor: pointer; font-size: 15px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    .info-modal-close:hover { background: var(--border-dark); }
+    .info-job-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .info-job-card {
+      border-radius: var(--radius); padding: 16px 18px;
+      border: 1px solid var(--border);
+    }
+    .info-job-card.job1 { background: var(--blue-light); border-color: var(--blue-border); }
+    .info-job-card.job2 { background: var(--green-light); border-color: var(--green-border); }
+    .info-job-label {
+      font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+    .job1 .info-job-label { color: var(--blue); }
+    .job2 .info-job-label { color: var(--green-dark); }
+    .info-job-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+    .info-job-points { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .info-job-points li { font-size: 12px; color: var(--text-muted); display: flex; gap: 7px; line-height: 1.4; }
+    .info-job-points li::before { content: '›'; font-weight: 700; flex-shrink: 0; }
+    .job1 .info-job-points li::before { color: var(--blue); }
+    .job2 .info-job-points li::before { color: var(--green); }
+    .info-job2-warn {
+      margin-top: 12px; padding: 8px 11px;
+      background: var(--amber-light); border: 1px solid var(--amber-border);
+      border-radius: var(--radius-sm);
+      font-size: 11.5px; color: var(--amber); font-weight: 500; line-height: 1.4;
+    }
+    .info-combined {
+      margin-top: 14px; padding: 14px 16px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); display: flex; gap: 11px; align-items: flex-start;
+    }
+    .info-combined-ico { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .info-combined-body { flex: 1; }
+    .info-combined-title { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .info-combined-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+    .info-warning-box {
+      margin-top: 10px; padding: 14px 16px;
+      background: #fff5f5; border: 1px solid #fecaca;
+      border-radius: var(--radius); display: flex; gap: 11px; align-items: flex-start;
+    }
+    .info-warning-box .info-combined-ico { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .info-warning-box .info-combined-title { font-size: 12px; font-weight: 700; color: #b91c1c; margin-bottom: 4px; }
+    .info-warning-box .info-combined-desc { font-size: 12px; color: #7f1d1d; line-height: 1.5; }
+
+    /* ── ERROR TOAST ── */
+    .error-toast {
+      position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-12px);
+      z-index: 600; min-width: 320px; max-width: 520px;
+      background: #fee2e2; border: 1px solid #fca5a5;
+      border-radius: var(--radius); box-shadow: var(--shadow-lg);
+      padding: 13px 18px; display: flex; align-items: flex-start; gap: 11px;
+      opacity: 0; pointer-events: none;
+      transition: opacity .25s, transform .25s;
+    }
+    .error-toast.show { opacity: 1; pointer-events: all; transform: translateX(-50%) translateY(0); }
+    .error-toast-ico { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .error-toast-msg { font-size: 13px; font-weight: 600; color: #991b1b; line-height: 1.4; flex: 1; }
+    .error-toast-close {
+      background: none; border: none; cursor: pointer;
+      font-size: 14px; color: #991b1b; flex-shrink: 0; padding: 0; line-height: 1;
+    }
+
+    /* ── DARK MODE ── */
+    body.dark {
+      --bg: #0d1117; --surface: #161b22;
+      --border: #30363d; --border-dark: #484f58;
+      --text: #e6edf3; --text-muted: #8b949e; --text-faint: #6e7681;
+      --green-light: #0d2818; --green-border: #238636;
+      --red-light: #2d0f0f; --blue-light: #0d1f3c; --blue-border: #1e4494;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.25);
+      --shadow: 0 1px 3px rgba(0,0,0,.35),0 1px 2px rgba(0,0,0,.25);
+      --shadow-md: 0 4px 6px rgba(0,0,0,.4),0 2px 4px rgba(0,0,0,.3);
+    }
+    body, .upload-card, .scenario-card, .log-card, .results-card,
+    .app-footer, .stat-box, .dl-card, .results-card {
+      transition: background-color .25s ease, border-color .25s ease, color .25s ease;
+    }
+    body.dark .upload-card.file-ok  { background: #0d2818; border-color: #238636; }
+    body.dark .upload-card.file-err { background: #2d0f0f; border-color: #da3633; }
+    body.dark .upload-status.ok  { background: #0d2818; color: #3fb950; }
+    body.dark .upload-status.err { background: #2d0f0f; color: #f85149; }
+    body.dark .file-size-tag { color: #3fb950; }
+    body.dark .stat-num { color: #58a6ff; }
+    body.dark .result-title { color: #3fb950; }
+    body.dark .dl-card { background: #0d2818; }
+    body.dark .pill-run  { background: #0d1f3c; border-color: #1e4494; }
+    body.dark .pill-skip { color: var(--text-faint); }
+    body.dark .pink-swatch { background: #7a3f76; border-color: #5c2e59; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .upload-grid { grid-template-columns: 1fr; }
+      .main { padding: 16px 16px 32px; }
+      .header-inner { padding: 14px 16px; }
+      .stats-row { grid-template-columns: repeat(2,1fr); }
+    }
+    @media (max-width: 480px) {
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      .dl-card { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ HEADER ═══════════ -->
+<header class="app-header">
+  <div class="header-inner">
+    <div class="header-left" onclick="location.reload()" style="cursor:pointer;" title="BatchFlow Manager">
+      <div class="header-icon">🤖</div>
+      <div>
+        <div class="header-title">BatchFlow Manager</div>
+        <div class="header-sub" onclick="event.stopPropagation()" style="cursor:default;">Cognizant × Verizon · Excel Processing Pipeline</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="btn-info-toggle" onclick="toggleInfoModal()" title="Jobs at a Glance">⚙️</button>
+      <button class="btn-theme-toggle" id="btn-theme" onclick="toggleTheme()" title="Toggle dark / light mode">🌙</button>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════ JOB INFO MODAL ═══════════ -->
+<div class="info-overlay" id="info-overlay" onclick="handleInfoOverlayClick(event)">
+  <div class="info-modal">
+    <div class="info-modal-header">
+      <div class="info-modal-title">What each job does</div>
+      <button class="info-modal-close" onclick="toggleInfoModal()">✕</button>
+    </div>
+    <div class="info-job-grid">
+      <div class="info-job-card job1">
+        <div class="info-job-label">Job 1</div>
+        <div class="info-job-name">Previous Batch Merge</div>
+        <ul class="info-job-points">
+          <li>Matches current week rows against the previous batch by EID</li>
+          <li>Calculates Copilot and Git productivity metrics</li>
+          <li>Adds usage comparisons and training status columns</li>
+        </ul>
+      </div>
+      <div class="info-job-card job2">
+        <div class="info-job-label">Job 2</div>
+        <div class="info-job-name">Allocation Merge</div>
+        <ul class="info-job-points">
+          <li>Matches rows by Associate ID against the Allocation sheet</li>
+          <li>Sets Final Status for each associate</li>
+          <li>Adds project and location details</li>
+        </ul>
+        <div class="info-job2-warn">⚠ Requires the Associate ID column, which is only present after Job 1 has been run at least once on this batch.</div>
+      </div>
+    </div>
+    <div class="info-combined">
+      <div class="info-combined-ico">🔗</div>
+      <div class="info-combined-body">
+        <div class="info-combined-title">When both jobs run together</div>
+        <div class="info-combined-desc">Job 1 runs first — it enriches the batch with EID-matched data and computed metrics. Job 2 then picks up that enriched output and merges it with the Allocation sheet. The final file contains all columns from both jobs in a single pass.</div>
+      </div>
+    </div>
+    <div class="info-warning-box">
+      <div class="info-combined-ico">🚫</div>
+      <div class="info-combined-body">
+        <div class="info-combined-title">Please Preserve the Output Column Names & Structure</div>
+        <ul class="info-job-points" style="margin-top:2px;">
+          <li>The output Excel is used as the input for the next week's batch — renaming any column may break matching in future runs and cause incorrect or incomplete results.</li>
+          <li>If a column name needs to be changed, please reach out to the development team to ensure the tool is updated accordingly.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ ERROR TOAST ═══════════ -->
+<div class="error-toast" id="error-toast">
+  <div class="error-toast-ico">✖</div>
+  <div class="error-toast-msg" id="error-toast-msg"></div>
+  <button class="error-toast-close" onclick="hideErrorToast()">✕</button>
+</div>
+
+<!-- ═══════════ MAIN ═══════════ -->
+<main class="main">
+
+  <!-- UPLOAD -->
+  <div class="section-label">🗂️ Upload Files</div>
+  <div class="upload-grid">
+
+    <!-- Current Batch -->
+    <div class="upload-card" id="card-current"
+         ondragover="onDragOver(event,'current')" ondragleave="onDragLeave(event,'current')" ondrop="onDrop(event,'current')">
+      <input type="file" accept=".xlsx,.xls" id="inp-current" onchange="onFileSelect(event,'current')">
+      <div class="card-top">
+        <div class="card-ico ico-req">📋</div>
+        <div>
+          <span class="req-tag tag-req">Required</span>
+          <div class="card-ttl">Current Week Batch Sheet</div>
+          <div class="card-desc">Weekly associate snapshot</div>
+        </div>
+      </div>
+      <div class="upload-status" id="stat-current"></div>
+      <div class="upload-hint" id="hint-current">
+        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+        Click or drag to upload .xlsx
+      </div>
+    </div>
+
+    <!-- Previous Batch -->
+    <div class="upload-card" id="card-previous"
+         ondragover="onDragOver(event,'previous')" ondragleave="onDragLeave(event,'previous')" ondrop="onDrop(event,'previous')">
+      <input type="file" accept=".xlsx,.xls" id="inp-previous" onchange="onFileSelect(event,'previous')">
+      <div class="card-top">
+        <div class="card-ico ico-opt">🔃</div>
+        <div>
+          <span class="req-tag tag-opt">Optional</span>
+          <div class="card-ttl">Previous Week Batch Sheet</div>
+          <div class="card-desc">Enables Job 1 (EID merge)</div>
+        </div>
+      </div>
+      <div class="upload-status" id="stat-previous"></div>
+      <div class="upload-hint" id="hint-previous">
+        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+        Click or drag to upload .xlsx
+      </div>
+    </div>
+
+    <!-- Allocation -->
+    <div class="upload-card" id="card-allocation"
+         ondragover="onDragOver(event,'allocation')" ondragleave="onDragLeave(event,'allocation')" ondrop="onDrop(event,'allocation')">
+      <input type="file" accept=".xlsx,.xls" id="inp-allocation" onchange="onFileSelect(event,'allocation')">
+      <div class="card-top">
+        <div class="card-ico ico-opt">👥</div>
+        <div>
+          <span class="req-tag tag-opt">Optional</span>
+          <div class="card-ttl">Allocation Sheet</div>
+          <div class="card-desc">Enables Job 2 (Associate ID merge)</div>
+        </div>
+      </div>
+      <div class="upload-status" id="stat-allocation"></div>
+      <div class="upload-hint" id="hint-allocation">
+        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+        Click or drag to upload .xlsx
+      </div>
+    </div>
+
+  </div><!-- /upload-grid -->
+
+  <!-- SCENARIO + PROCESS -->
+  <div class="scenario-card">
+    <!-- Scenario -->
+    <div class="scenario-body" id="scenario-body">
+      <div class="scenario-ico" id="sc-ico">⏳</div>
+      <div class="scenario-info">
+        <div class="scenario-title" id="sc-title">Waiting for files…</div>
+        <div class="scenario-desc" id="sc-desc">Upload the Current Batch Sheet and at least one additional file to begin.</div>
+        <div class="task-pills" id="sc-pills"></div>
+      </div>
+    </div>
+
+    <div style="height:16px"></div>
+
+    <!-- Button -->
+    <button class="btn-process" id="btn-process" disabled onclick="runProcess()">
+      <svg width="17" height="17" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      <span id="btn-label">Run BatchFlow</span>
+    </button>
+
+    <!-- Progress -->
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-meta">
+        <span id="prog-label">Initializing…</span>
+        <span class="pct" id="prog-pct">0%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="prog-bar" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results-card" id="results-card">
+    <div class="results-top">
+      <div class="result-success-ico">✅</div>
+      <div>
+        <div class="result-title">Processing Complete!</div>
+        <div class="result-sub" id="result-sub">Your output file is ready.</div>
+      </div>
+    </div>
+    <div class="stats-row" id="stats-row"></div>
+    <div class="dl-grid" id="dl-grid"></div>
+    <div class="pink-note">
+      <span class="pink-swatch"></span>
+      <span>Columns added by this tool are highlighted with pink headers in the Excel output.</span>
+    </div>
+  </div>
+
+  <!-- ACTIVITY LOG -->
+  <div class="log-card">
+    <div class="log-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="log-dots">
+          <div class="log-dot dot-r"></div>
+          <div class="log-dot dot-y"></div>
+          <div class="log-dot dot-g"></div>
+        </div>
+        <span class="log-title">Activity Log</span>
+      </div>
+      <div class="log-actions">
+        <button class="btn-log-action" onclick="clearLog()">Clear</button>
+        <button class="btn-log-action" onclick="copyLog()">Copy</button>
+      </div>
+    </div>
+    <div class="log-body" id="log-body"></div>
+  </div>
+
+</main>
+
+<footer class="app-footer">
+  <strong>BatchFlow Manager</strong> · Cognizant × Verizon · Zero data transmission — your files are read and processed entirely within this browser.
+</footer>
+
+<!-- ═══════════ SCRIPTS ═══════════ -->
+<script>
+/* ─────────────────────────────────────────────────────────────────────────────
+   LIBRARY LOADER — xlsx-js-style (style support) with SheetJS fallback
+───────────────────────────────────────────────────────────────────────────── */
+(function loadXLSX() {
+  const script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';
+  script.onload = () => { window._xlsxReady = true; appLog('PLAIN', 'xlsx-js-style library loaded (style support enabled).'); };
+  script.onerror = () => {
+    appLog('WARN', 'xlsx-js-style failed to load, falling back to standard SheetJS (no pink header styling).');
+    const fallback = document.createElement('script');
+    fallback.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    fallback.onload = () => { window._xlsxReady = true; appLog('PLAIN', 'Standard SheetJS loaded (fallback).'); };
+    fallback.onerror = () => {
+      appLog('ERROR', '  ✖  BOTH CDNs failed to load. Internet access may be blocked by your network/firewall.');
+      appLog('ERROR', '  ✖  File processing will not work. Try: (1) connect to internet, (2) whitelist jsdelivr.net and cdnjs.cloudflare.com, or (3) deploy to SharePoint.');
+    };
+    document.head.appendChild(fallback);
+  };
+  document.head.appendChild(script);
+})();
+(function loadJSZip() {
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
+  s.onload  = () => { window._jszipReady = true; };
+  s.onerror = () => { appLog('WARN', '  ⚠  JSZip failed to load — extra sheet formatting may not be preserved in output.'); };
+  document.head.appendChild(s);
+})();
+</script>
+
+<script>
+/* ─────────────────────────────────────────────────────────────────────────────
+   STATE
+───────────────────────────────────────────────────────────────────────────── */
+const App = {
+  files:     { current: null, previous: null, allocation: null },
+  data:      { current: null, previous: null, allocation: null },
+  ws:        { current: null },
+  wb:        { current: null },
+  rawBuffer: { current: null }, // original ArrayBuffer — used for ZIP surgery
+  headers:   { current: [] },
+  processing: false,
+  pendingDownloads: []
+};
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   LOGGING
+───────────────────────────────────────────────────────────────────────────── */
+function appLog(level, msg) {
+  const box = document.getElementById('log-body');
+  const ts = new Date().toLocaleTimeString('en-GB', { hour12: false });
+  const el = document.createElement('div');
+  el.className = `log-line ${level}`;
+  el.innerHTML = `<span class="log-ts">${ts}</span><span class="log-txt">${escHtml(msg)}</span>`;
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+}
+function log(msg)    { appLog('PLAIN', msg); }
+function logI(msg)   { appLog('INFO', '  ⓘ  ' + msg); }
+function logOk(msg)  { appLog('SUCCESS', '  ✔  ' + msg); }
+function logW(msg)   { appLog('WARN', '  ⚠  ' + msg); }
+function logE(msg)   { appLog('ERROR', '  ✖  ' + msg); }
+function clearLog()  { document.getElementById('log-body').innerHTML = ''; appLog('PLAIN', 'Log cleared.'); }
+function copyLog()   {
+  const lines = [...document.querySelectorAll('#log-body .log-txt')].map(el => el.textContent).join('\n');
+  navigator.clipboard?.writeText(lines).then(() => logOk('Log copied to clipboard.'));
+}
+function escHtml(s)  { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   FILE UPLOAD HANDLING
+───────────────────────────────────────────────────────────────────────────── */
+function onDragOver(e, key) {
+  e.preventDefault();
+  document.getElementById(`card-${key}`).classList.add('drag-over');
+}
+function onDragLeave(e, key) {
+  document.getElementById(`card-${key}`).classList.remove('drag-over');
+}
+function onDrop(e, key) {
+  e.preventDefault();
+  document.getElementById(`card-${key}`).classList.remove('drag-over');
+  const file = e.dataTransfer?.files?.[0];
+  if (file) setFile(key, file);
+}
+function onFileSelect(e, key) {
+  const file = e.target.files?.[0];
+  if (file) setFile(key, file);
+}
+
+function setFile(key, file) {
+  const validExts = ['.xlsx', '.xls'];
+  const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+  const card = document.getElementById(`card-${key}`);
+  const stat = document.getElementById(`stat-${key}`);
+  const hint = document.getElementById(`hint-${key}`);
+
+  if (!validExts.includes(ext)) {
+    card.className = 'upload-card file-err';
+    stat.className = 'upload-status err show';
+    stat.innerHTML = `<span>⚠ Invalid file type: <strong>${escHtml(ext)}</strong>. Please upload .xlsx or .xls</span>`;
+    App.files[key] = null; App.data[key] = null;
+    updateScenario(); return;
+  }
+
+  const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+  const sizeStr = file.size > 1024*1024 ? `${sizeMB} MB` : `${Math.round(file.size/1024)} KB`;
+
+  card.className = 'upload-card file-ok';
+  stat.className = 'upload-status ok show';
+  stat.innerHTML = `<span>✔ ${escHtml(file.name)}</span><span class="file-size-tag">${sizeStr}</span>`;
+  if (hint) hint.style.display = 'none';
+
+  App.files[key] = file;
+  App.data[key] = null;
+  if (key === 'current') { App.ws.current = null; App.wb.current = null; App.rawBuffer.current = null; }
+  logI(`File set [${key}]: ${file.name} (${sizeStr})`);
+  updateScenario();
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SCENARIO DETECTION
+───────────────────────────────────────────────────────────────────────────── */
+function detectScenario() {
+  const { current, previous, allocation } = App.files;
+  if (!current) return { id: 0, label: 'Waiting for files…', desc: 'Upload the Current Week Batch Sheet (required) + at least one additional file.', valid: false, pills: [] };
+  if (!previous && !allocation)
+    return { id: 4, label: 'Waiting for More Files', desc: 'Please upload at least one additional file (Previous Week Batch or Allocation Sheet).', valid: false, pills: [{ lbl: '⚠ Job 1: No previous week batch', cls: 'pill-err' }, { lbl: '⚠ Job 2: No allocation sheet', cls: 'pill-err' }] };
+  if (previous && allocation)
+    return { id: 1, label: 'Full Batch Processing', desc: 'Will run Job 1 (EID merge), then Job 2 (Associate ID merge).', output: 'New Batch - CTS - Copilot Gitlab Usage Weekly.xlsx', valid: true, pills: [{ lbl: '▶ Job 1: EID Merge', cls: 'pill-run' }, { lbl: '▶ Job 2: Allocation Merge', cls: 'pill-run' }] };
+  if (previous && !allocation)
+    return { id: 2, label: 'Job 1 — Previous Batch Merge', hint: 'Upload the Allocation file to run Full Batch Processing', desc: 'Will run Job 1 only (EID merge).', output: 'Job1_Only – CTS - Copilot Gitlab Usage Weekly.xlsx', valid: true, pills: [{ lbl: '▶ Job 1: EID Merge', cls: 'pill-run' }, { lbl: '— Job 2: Skipped (no allocation)', cls: 'pill-skip' }] };
+  if (!previous && allocation)
+    return { id: 3, label: 'Job 2 — Allocation Merge', hint: 'Upload the Previous Week Batch file to run Full Batch Processing', desc: 'Will attempt Job 2 only. Requires "Associate ID" column in the current batch (added by Job 1 in a prior run).', output: 'New Batch - CTS - Copilot Gitlab Usage Weekly.xlsx', valid: true, pills: [{ lbl: '— Job 1: Skipped (no prev batch)', cls: 'pill-skip' }, { lbl: '▶ Job 2: Allocation Merge', cls: 'pill-run' }] };
+  return { id: 0, label: 'Waiting…', desc: '', valid: false, pills: [] };
+}
+
+function updateScenario() {
+  const sc = detectScenario();
+  const icoEl = document.getElementById('sc-ico');
+  const ttlEl = document.getElementById('sc-title');
+  const dscEl = document.getElementById('sc-desc');
+  const plsEl = document.getElementById('sc-pills');
+  const btn   = document.getElementById('btn-process');
+
+  const icons = { 0: '⏳', 1: '✅', 2: '✅', 3: '⚠️', 4: '❌' };
+  icoEl.textContent = icons[sc.id] ?? '⏳';
+  ttlEl.textContent = sc.label;
+  const descHtml = sc.id === 0
+    ? `<span style="color:#e3d2c4;font-weight:500;">${escHtml(sc.desc)}</span>`
+    : sc.id === 4
+    ? `<span style="color:#b45309;font-weight:500;">${escHtml(sc.desc)}</span>`
+    : escHtml(sc.desc);
+  dscEl.innerHTML = descHtml
+    + (sc.output ? `<div style="margin-top:5px;font-weight:600;color:#16a34a;">Output: ${escHtml(sc.output)}</div>` : '')
+    + (sc.hint   ? `<div style="font-size:12px;font-weight:500;color:#b45309;font-style:italic;margin-top:4px;">${escHtml(sc.hint)}</div>` : '');
+
+  plsEl.innerHTML = sc.pills.map(p => `<span class="task-pill ${p.cls}">${escHtml(p.lbl)}</span>`).join('');
+  btn.disabled = !sc.valid || App.processing;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   PROGRESS UI
+───────────────────────────────────────────────────────────────────────────── */
+function setProgress(pct, label) {
+  document.getElementById('prog-bar').style.width = pct + '%';
+  document.getElementById('prog-pct').textContent = pct + '%';
+  document.getElementById('prog-label').textContent = label;
+}
+function showProgress(show) {
+  document.getElementById('progress-wrap').className = show ? 'progress-wrap show' : 'progress-wrap';
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   EXCEL READING
+───────────────────────────────────────────────────────────────────────────── */
+function readExcelFile(file, targetSheetName = null) {
+  return new Promise((resolve, reject) => {
+    if (!window.XLSX || typeof window.XLSX.read !== 'function') {
+      reject(new Error('XLSX library not loaded. Please refresh the page and try again.'));
+      return;
+    }
+    if (!file || !(file instanceof Blob)) {
+      reject(new Error('Invalid file reference. Please re-select the file and try again.'));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const arr = new Uint8Array(e.target.result);
+        const wb = XLSX.read(arr, { type: 'array', raw: false, cellDates: true, cellStyles: true });
+
+        // Find target sheet by name, fallback to first sheet
+        const sheetName = (targetSheetName && wb.SheetNames.includes(targetSheetName))
+          ? targetSheetName : wb.SheetNames[0];
+        const ws = wb.Sheets[sheetName];
+        if (!ws) throw new Error('No worksheet found in file.');
+
+        // Detect header row by scanning all cells in each row for anchor columns
+        const HEADER_ANCHORS = ['vzid', 'name', 'email'];
+        const allRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: false });
+        let headerRowIdx = 0;
+        for (let i = 0; i < allRows.length; i++) {
+          const row = allRows[i];
+          const found = row.some(cell => {
+            const v = String(cell ?? '').trim().toLowerCase();
+            return HEADER_ANCHORS.includes(v);
+          });
+          if (found) { headerRowIdx = i; break; }
+        }
+
+        const rawHdr = allRows[headerRowIdx] || [];
+        const headers = rawHdr.map(h => String(h ?? '').trim()).filter(h => h);
+        // Build data rows from headerRowIdx+1 onwards using detected headers
+        const dataRows = allRows.slice(headerRowIdx + 1).filter(row => row.some(c => c !== null && c !== ''));
+        const data = dataRows.map(row => {
+          const obj = {};
+          headers.forEach((h, i) => { obj[h] = row[i] ?? null; });
+          return obj;
+        });
+
+        if (!data.length) throw new Error('Worksheet appears to be empty.');
+        resolve({ data, ws, headers, wb, sheetName, rawBuffer: e.target.result });
+      } catch (err) { reject(new Error('Failed to parse Excel: ' + err.message)); }
+    };
+    reader.onerror = (evt) => {
+      const domErr = evt?.target?.error;
+      const detail = domErr ? ` [${domErr.name}: ${domErr.message}]` : '';
+      reject(new Error(
+        `File read failed${detail}. ` +
+        `Possible causes: file is open in Excel (close it first), ` +
+        `browser security restriction (try serving via SharePoint/web server instead of file://), ` +
+        `or the file is corrupted. Re-upload the file and try again.`
+      ));
+    };
+    try {
+      reader.readAsArrayBuffer(file);
+    } catch (syncErr) {
+      reject(new Error('Could not start file read: ' + syncErr.message));
+    }
+  });
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   COLUMN HELPERS
+───────────────────────────────────────────────────────────────────────────── */
+function colKey(name) { return String(name || '').toLowerCase().trim(); }
+
+function colLetter(idx) {
+  let letter = '', i = idx + 1;
+  while (i > 0) { const m = (i - 1) % 26; letter = String.fromCharCode(65 + m) + letter; i = Math.floor((i - 1) / 26); }
+  return letter;
+}
+
+function hasCol(data, name) {
+  if (!data?.length) return false;
+  const k = colKey(name);
+  const sample = data.length > 5 ? data.slice(0, 5) : data;
+  return sample.some(row => Object.keys(row).some(h => colKey(h) === k));
+}
+
+function findColActual(row, name) {
+  const k = colKey(name);
+  return Object.keys(row).find(h => colKey(h) === k);
+}
+
+function getVal(row, name, def = null) {
+  const actual = findColActual(row, name);
+  return actual !== undefined ? row[actual] : def;
+}
+
+function toNum(v, fallback = 0) {
+  if (v === null || v === undefined || v === '') return fallback;
+  const n = parseFloat(String(v).replace(/,/g, ''));
+  return isNaN(n) ? fallback : n;
+}
+
+function normalizeId(v) {
+  return String(v ?? '').trim().replace(/\.0+$/, '');
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TRANSFORMATION FUNCTIONS
+───────────────────────────────────────────────────────────────────────────── */
+function transformFinalStatus(billStatus) {
+  if (String(billStatus ?? '').trim().toUpperCase() === 'Y') return 'Active';
+  const now = new Date();
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `Not Active as of ${now.getDate()} ${months[now.getMonth()]} Allocation`;
+}
+
+function transformLocation(country) {
+  const c = String(country ?? '').trim();
+  if (c === 'India') return 'IN';
+  if (c === 'United States') return 'US';
+  return 'Other';
+}
+
+function calcDisposition(hasLicense, interactions, linesAdded) {
+  const lic   = String(hasLicense ?? '').trim();
+  const inter = toNum(interactions);
+  const lines = toNum(linesAdded);
+
+  if (lic !== 'Yes') return 'No Copilot License';
+  if (inter >= 0 && inter <= 5) return 'Low user (Interaction 0-5)';
+  if (inter >= 6 && inter <= 50) {
+    if (lines < 100)  return 'Average user (Interaction 6-50 and Copilot Added Lines <100)';
+    if (lines <= 500) return 'Average user (Interaction 6-50 and Copilot Added Lines 100–500)';
+    return 'Average user (Interaction 6-50 and Copilot Added Lines >500)';
+  }
+  if (inter > 50) {
+    if (lines < 100)  return 'Power user (Interaction >50 and Copilot Added Lines <100)';
+    if (lines <= 500) return 'Power user (Interaction >50 and Copilot Added Lines 100–500)';
+    return 'Power user (Interaction >50 and Copilot Added Lines >500)';
+  }
+  return 'No match';
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   COLUMN ORDERING — insert new columns at logical positions
+───────────────────────────────────────────────────────────────────────────── */
+// All columns produced by Job 1 — used to re-apply pink in Scenario 3
+const JOB1_COLS = new Set([
+  'Associate ID', 'Associate Name', 'Role Category', 'Service Line',
+  'ACT/PCT Mapping', 'Final Copilot Lines', 'Copilot Usage > Interactions',
+  'Final Git Lines', 'Final Copilot <50% of Final Git', 'Added Copilot <50% of Added Git',
+  'Final Copilot <60% of Final Git', 'Added Copilot <60% of Added Git',
+  'Copilot Training Complete', 'APEX Learning Assessment Completed?',
+  'Either APEX or Copilot Training complete', 'CTS Copilot Activation',
+  'Disposition parameter', 'Comments',
+]);
+
+const INS_RULES_T1 = [
+  ['Associate ID',                              'EID'],
+  ['Associate Name',                            'Associate ID'],
+  ['Role Category',                             'Associate Name'],
+  ['Service Line',                              'Role Category'],
+  ['ACT/PCT Mapping',                           'Service Line'],
+  ['Final Copilot Lines',                       'Lines Deleted'],
+  ['GHCP Pulse',                                'Lines Deleted'],
+  ['Final Git Lines',                           'Deleted Lines'],
+  ['GitHub Pulse',                              'Deleted Lines'],
+  ['Copilot Usage > Interactions',              'Copilot Interactions'],
+  ['Final Copilot <50% of Final Git',           'Final Git Lines'],
+  ['Added Copilot <50% of Added Git',           'Final Copilot <50% of Final Git'],
+  ['Final Copilot <60% of Final Git',           'Added Copilot <50% of Added Git'],
+  ['Added Copilot <60% of Added Git',           'Final Copilot <60% of Final Git'],
+  ['Copilot Training Complete',                 ['Copilot Status', 'Copilot To Be Revoked', 'Current Copilot Status']],
+  ['APEX Learning Assessment Completed?',       'Copilot Training Complete'],
+  ['Either APEX or Copilot Training complete',  'APEX Learning Assessment Completed?'],
+  ['CTS Copilot Activation',                    'Either APEX or Copilot Training complete'],
+  ['Disposition parameter',                     'CTS Copilot Activation'],
+  ['Comments',                                  'Disposition parameter'],
+];
+
+const INS_RULES_T2 = [
+  ['Final Status',       'Associate Name'],
+  ['Project ID',         'Service Line'],
+  ['Project Name',       'Project ID'],
+  ['Tower',              'Project Name'],
+  ['Location (On/Off)',  'CTS Copilot Activation'],
+];
+
+/**
+ * Given the current ordered header list, insert newCol after afterCol.
+ * If afterCol not found, append at end.
+ * Only inserts if newCol not already in headers.
+ */
+function insertAfter(headers, newCol, afterCol) {
+  if (headers.includes(newCol)) return headers; // already present (overwrite case)
+  const anchors = Array.isArray(afterCol) ? afterCol : [afterCol];
+  for (const anchor of anchors) {
+    const idx = headers.findIndex(h => colKey(h) === colKey(anchor));
+    if (idx !== -1) {
+      const result = [...headers];
+      result.splice(idx + 1, 0, newCol);
+      return result;
+    }
+  }
+  return [...headers, newCol];
+}
+
+/** Apply insertion rules, but only for cols that were actually added */
+function applyInsRules(originalHeaders, rules, addedSet) {
+  let headers = [...originalHeaders];
+  for (const [newCol, afterCol] of rules) {
+    if (addedSet.has(newCol)) {
+      headers = insertAfter(headers, newCol, afterCol);
+    }
+  }
+  return headers;
+}
+
+/** Re-order data rows to match the given column order */
+function reorderRows(rows, headers) {
+  return rows.map(row => {
+    const out = {};
+    for (const col of headers) {
+      out[col] = (col in row) ? row[col] : null;
+    }
+    return out;
+  });
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TASK 1 — EID MERGE
+───────────────────────────────────────────────────────────────────────────── */
+function processTask1(currentData, prevData, currentHeaders) {
+  log('');
+  logI(`Job 1 — EID Merge starting (${currentData.length} rows, ${prevData.length} prev rows)`);
+
+  // Use raw worksheet headers when available — avoids missing columns whose first-row cell is empty
+  const origHeaders = (currentHeaders && currentHeaders.length)
+    ? currentHeaders
+    : Object.keys(currentData[0] || {});
+  const hasEID = hasCol(currentData, 'EID');
+
+  if (!hasEID) logW('Job 1: "EID" column not found in current batch — EID matching skipped, formulas only.');
+  else logI(`Job 1: EID column found. Building lookup map…`);
+
+  const prevByEID = new Map();
+  if (hasEID) {
+    for (const row of prevData) {
+      const eid = normalizeId(getVal(row, 'EID'));
+      if (eid) prevByEID.set(eid, row);
+    }
+    logI(`Job 1: Lookup map built — ${prevByEID.size} unique EIDs in previous batch.`);
+  }
+
+  // Columns to copy from previous batch (output col → source col in prev)
+  const COPY_MAP = [
+    ['Associate ID',                        'Associate ID'],
+    ['Associate Name',                      'Associate Name'],
+    ['Role Category',                       'Role Category'],
+    ['Service Line',                        'Service Line'],
+    ['ACT/PCT Mapping',                     'ACT/PCT Mapping'],
+    ['Copilot Training Complete',           'Copilot Training Complete'],
+    ['APEX Learning Assessment Completed?', 'APEX Learning Assessment Completed?'],
+    ['CTS Copilot Activation',              'CTS Copilot Activation'],
+  ];
+
+  const availCopyMap = [];
+  for (const [out, src] of COPY_MAP) {
+    if (hasCol(prevData, src)) {
+      availCopyMap.push({ out, src });
+      logI(`Job 1: "${out}" ← prev."${src}" — available`);
+    } else {
+      logW(`Job 1: prev column "${src}" not found — skipping "${out}"`);
+    }
+  }
+
+  const canCopilotLines = hasCol(currentData, 'Lines Added') && hasCol(currentData, 'Lines Deleted');
+  const canGitLines     = hasCol(currentData, 'Added Lines') && hasCol(currentData, 'Deleted Lines');
+  const canCopilotInter = hasCol(currentData, 'Copilot Usage') && hasCol(currentData, 'Copilot Interactions');
+  const canDisposition  = hasCol(currentData, 'Has A Copilot License') &&
+                          hasCol(currentData, 'Copilot Interactions') &&
+                          hasCol(currentData, 'Lines Added');
+
+
+  if (canCopilotLines) logI('Job 1: Will calculate "Final Copilot Lines" (Lines Added − Lines Deleted)');
+  else logW('Job 1: Skipping "Final Copilot Lines" — missing source columns');
+  if (canGitLines) logI('Job 1: Will calculate "Final Git Lines" (Added Lines − Deleted Lines)');
+  else logW('Job 1: Skipping "Final Git Lines" — missing source columns');
+  if (canCopilotInter) logI('Job 1: Will add "Copilot Usage > Interactions"');
+  if (canCopilotLines && canGitLines) logI('Job 1: Will calculate 4 comparison columns');
+  if (canDisposition) logI('Job 1: Will calculate "Disposition parameter"');
+  else logW('Job 1: Skipping "Disposition parameter" — missing required source columns');
+
+  let matched = 0, unmatched = 0;
+
+  const processed = currentData.map(curr => {
+    const row = { ...curr };
+
+    if (hasEID) {
+      const eid = normalizeId(getVal(curr, 'EID'));
+      const prev = eid ? prevByEID.get(eid) : null;
+
+      if (prev) {
+        matched++;
+        for (const { out, src } of availCopyMap) {
+          const val = getVal(prev, src);
+          row[out] = (val === null || val === undefined || String(val).trim() === '') ? '#N/A' : val;
+        }
+      } else {
+        unmatched++;
+        for (const { out } of availCopyMap) {
+          row[out] = '#N/A';
+        }
+      }
+    }
+
+    // Final Copilot Lines — compute before comparisons
+    row['Final Copilot Lines'] = canCopilotLines
+      ? toNum(getVal(curr, 'Lines Added')) - toNum(getVal(curr, 'Lines Deleted'))
+      : '#N/A';
+
+    // Final Git Lines — compute before comparisons
+    row['Final Git Lines'] = canGitLines
+      ? toNum(getVal(curr, 'Added Lines')) - toNum(getVal(curr, 'Deleted Lines'))
+      : '#N/A';
+
+    // Recalculate existing current-batch formula columns — always overwrite to avoid stale Excel cache
+    if (canCopilotLines) row['GHCP Pulse']   = toNum(getVal(curr, 'Lines Added'))  - toNum(getVal(curr, 'Lines Deleted'));
+    if (canGitLines)     row['GitHub Pulse'] = toNum(getVal(curr, 'Added Lines'))  - toNum(getVal(curr, 'Deleted Lines'));
+
+    // Copilot Usage > Interactions — TRUE if Copilot Usage > Copilot Interactions
+    if (canCopilotInter) {
+      const usage = getVal(curr, 'Copilot Usage');
+      const inter = getVal(curr, 'Copilot Interactions');
+      if (usage === null || inter === null || String(usage).trim() === '' || String(inter).trim() === '') {
+        row['Copilot Usage > Interactions'] = '#N/A';
+      } else {
+        row['Copilot Usage > Interactions'] = toNum(usage) > toNum(inter) ? 'TRUE' : 'FALSE';
+      }
+    } else {
+      row['Copilot Usage > Interactions'] = '#N/A';
+    }
+
+    // Comparison columns
+    const fcl        = typeof row['Final Copilot Lines'] === 'number' ? row['Final Copilot Lines'] : null;
+    const fgl        = typeof row['Final Git Lines']     === 'number' ? row['Final Git Lines']     : null;
+    const linesAdded = canCopilotLines ? toNum(getVal(curr, 'Lines Added'))  : null;
+    const addedLines = canGitLines     ? toNum(getVal(curr, 'Added Lines'))  : null;
+
+    row['Final Copilot <50% of Final Git']  = (fcl !== null && fgl !== null)             ? (fcl < 0.5 * fgl        ? 'TRUE' : 'FALSE') : '#N/A';
+    row['Added Copilot <50% of Added Git']  = (linesAdded !== null && addedLines !== null) ? (linesAdded < 0.5 * addedLines ? 'TRUE' : 'FALSE') : '#N/A';
+    row['Final Copilot <60% of Final Git']  = (fcl !== null && fgl !== null)             ? (fcl < 0.6 * fgl        ? 'TRUE' : 'FALSE') : '#N/A';
+    row['Added Copilot <60% of Added Git']  = (linesAdded !== null && addedLines !== null) ? (linesAdded < 0.6 * addedLines ? 'TRUE' : 'FALSE') : '#N/A';
+
+    // Either APEX or Copilot Training complete
+    const ct  = row['Copilot Training Complete'];
+    const apx = row['APEX Learning Assessment Completed?'];
+    if (ct !== undefined || apx !== undefined) {
+      const ctNA  = ct  === undefined || ct  === '#N/A';
+      const apxNA = apx === undefined || apx === '#N/A';
+      row['Either APEX or Copilot Training complete'] = (ctNA && apxNA)
+        ? '#N/A'
+        : (ct === 'Completed' || apx === 'Completed') ? 'Completed' : 'Not Completed';
+    }
+
+    // Disposition parameter
+    row['Disposition parameter'] = canDisposition
+      ? calcDisposition(getVal(curr, 'Has A Copilot License'), getVal(curr, 'Copilot Interactions', 0), getVal(curr, 'Lines Added', 0))
+      : '#N/A';
+
+    // Comments — always blank
+    row['Comments'] = '';
+
+    return row;
+  });
+
+  if (hasEID) logOk(`Job 1: EID matching — ${matched} matched, ${unmatched} unmatched`);
+
+  const addedNew = new Set();
+  if (hasEID) {
+    for (const { out } of availCopyMap) {
+      if (!origHeaders.find(h => colKey(h) === colKey(out))) addedNew.add(out);
+    }
+  }
+  // GHCP Pulse / GitHub Pulse: position them if not already in origHeaders
+  if (canCopilotLines && !origHeaders.find(h => colKey(h) === 'ghcp pulse'))   addedNew.add('GHCP Pulse');
+  if (canGitLines     && !origHeaders.find(h => colKey(h) === 'github pulse')) addedNew.add('GitHub Pulse');
+
+  const formulaCols = [
+    'Final Copilot Lines', 'Final Git Lines', 'Copilot Usage > Interactions',
+    'Final Copilot <50% of Final Git', 'Added Copilot <50% of Added Git',
+    'Final Copilot <60% of Final Git', 'Added Copilot <60% of Added Git',
+    'Either APEX or Copilot Training complete', 'Disposition parameter', 'Comments',
+  ];
+  for (const col of formulaCols) {
+    if (!origHeaders.find(h => colKey(h) === colKey(col))) addedNew.add(col);
+  }
+
+  let finalHeaders = applyInsRules(origHeaders, INS_RULES_T1, addedNew);
+  const allKeys = new Set(processed.flatMap(r => Object.keys(r)));
+  for (const k of allKeys) {
+    if (!finalHeaders.find(h => colKey(h) === colKey(k))) finalHeaders.push(k);
+  }
+
+  // Comments must always be the last column
+  const commIdx = finalHeaders.findIndex(h => colKey(h) === 'comments');
+  if (commIdx !== -1 && commIdx !== finalHeaders.length - 1) {
+    finalHeaders.push(finalHeaders.splice(commIdx, 1)[0]);
+  }
+
+  const ordered = reorderRows(processed, finalHeaders);
+
+  const allNewCols = new Set([
+    ...(hasEID ? availCopyMap.map(x => x.out) : []),
+    ...formulaCols,
+  ]);
+
+  logOk(`Job 1 complete — ${finalHeaders.length} columns × ${ordered.length} rows`);
+  return { data: ordered, newCols: allNewCols, matched, unmatched };
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TASK 2 — ALLOCATION MERGE BY ASSOCIATE ID
+───────────────────────────────────────────────────────────────────────────── */
+function processTask2(batchData, allocData, batchHeaders) {
+  log('');
+  logI(`Job 2 — Allocation Merge starting (${batchData.length} batch rows, ${allocData.length} alloc rows)`);
+
+  if (!hasCol(batchData, 'Associate ID')) {
+    const msg = 'Associate ID not found in Current Batch sheet. Please provide previous week batch sheet to generate the excel.';
+    logE('Job 2: ' + msg);
+    showErrorToast(msg);
+    throw new Error(msg);
+  }
+  logI('Job 2: "Associate ID" column confirmed in batch.');
+
+  const allocByID = new Map();
+  for (const row of allocData) {
+    const id = normalizeId(getVal(row, 'Associate ID'));
+    if (id) allocByID.set(id, row);
+  }
+  logI(`Job 2: Allocation lookup map — ${allocByID.size} unique Associate IDs.`);
+
+  const canProjID    = hasCol(allocData, 'Project ID');
+  const canProjName  = hasCol(allocData, 'Project Description');
+  const canFinalStat = hasCol(allocData, 'Billability Status');
+  const canLocation  = hasCol(allocData, 'On/Off');
+  const canTower     = hasCol(allocData, 'Tower');
+
+  if (canProjID)    logI('Job 2: "Project ID" available from allocation');
+  else              logW('Job 2: "Project ID" not found in allocation — skipping');
+  if (canProjName)  logI('Job 2: "Project Name" ← allocation."Project Description"');
+  else              logW('Job 2: "Project Description" not found — skipping "Project Name"');
+  if (canFinalStat) logI('Job 2: "Final Status" ← transformed from "Billability Status"');
+  else              logW('Job 2: "Billability Status" not found — skipping "Final Status"');
+  if (canLocation)  logI('Job 2: "Location" ← allocation."On/Off"');
+  else              logW('Job 2: "On/Off" not found in allocation — skipping "Location"');
+  if (canTower)     logI('Job 2: "Tower" ← allocation."Tower"');
+  else              logW('Job 2: "Tower" not found in allocation — skipping');
+
+  const origHeaders = (batchHeaders && batchHeaders.length)
+    ? batchHeaders
+    : Object.keys(batchData[0] || {});
+
+  // Recalculate current-batch formula columns — always overwrite to avoid stale Excel cache
+  const canCopilotLinesT2 = hasCol(batchData, 'Lines Added') && hasCol(batchData, 'Lines Deleted');
+  const canGitLinesT2     = hasCol(batchData, 'Added Lines') && hasCol(batchData, 'Deleted Lines');
+
+  let matched = 0, unmatched = 0;
+
+  const processed = batchData.map(brow => {
+    const row = { ...brow };
+    const assocID = normalizeId(getVal(brow, 'Associate ID'));
+    const alloc = assocID ? allocByID.get(assocID) : null;
+
+    if (alloc) {
+      matched++;
+      if (canProjID)    row['Project ID']        = getVal(alloc, 'Project ID')          ?? '#N/A';
+      if (canProjName)  row['Project Name']       = getVal(alloc, 'Project Description') ?? '#N/A';
+      if (canFinalStat) row['Final Status']       = transformFinalStatus(getVal(alloc, 'Billability Status'));
+      if (canLocation)  row['Location (On/Off)']  = getVal(alloc, 'On/Off')             ?? '#N/A';
+      if (canTower)     row['Tower']              = getVal(alloc, 'Tower')               ?? '#N/A';
+    } else {
+      unmatched++;
+      if (canProjID)    row['Project ID']        = '#N/A';
+      if (canProjName)  row['Project Name']       = '#N/A';
+      if (canFinalStat) row['Final Status']       = transformFinalStatus('');
+      if (canLocation)  row['Location (On/Off)']  = '#N/A';
+      if (canTower)     row['Tower']              = '#N/A';
+    }
+    // Recalculate existing current-batch formula columns — always overwrite to avoid stale Excel cache
+    if (canCopilotLinesT2) row['GHCP Pulse']   = toNum(getVal(brow, 'Lines Added'))  - toNum(getVal(brow, 'Lines Deleted'));
+    if (canGitLinesT2)     row['GitHub Pulse'] = toNum(getVal(brow, 'Added Lines'))  - toNum(getVal(brow, 'Deleted Lines'));
+    return row;
+  });
+
+  logOk(`Job 2: Allocation matching — ${matched} matched, ${unmatched} unmatched`);
+
+  const addedNew = new Set();
+  if (canProjID    && !origHeaders.find(h => colKey(h) === colKey('Project ID')))           addedNew.add('Project ID');
+  if (canProjName  && !origHeaders.find(h => colKey(h) === colKey('Project Name')))          addedNew.add('Project Name');
+  if (canFinalStat && !origHeaders.find(h => colKey(h) === colKey('Final Status')))          addedNew.add('Final Status');
+  if (canLocation  && !origHeaders.find(h => colKey(h) === colKey('Location (On/Off)')))     addedNew.add('Location (On/Off)');
+  if (canTower     && !origHeaders.find(h => colKey(h) === colKey('Tower')))                 addedNew.add('Tower');
+
+  let finalHeaders = applyInsRules(origHeaders, INS_RULES_T2, addedNew);
+
+  // Position GHCP Pulse / GitHub Pulse before safety net so they land at the right spot
+  if (canCopilotLinesT2 && !finalHeaders.find(h => colKey(h) === 'ghcp pulse'))
+    finalHeaders = insertAfter(finalHeaders, 'GHCP Pulse', 'Lines Deleted');
+  if (canGitLinesT2 && !finalHeaders.find(h => colKey(h) === 'github pulse'))
+    finalHeaders = insertAfter(finalHeaders, 'GitHub Pulse', 'Deleted Lines');
+
+  const allKeys = new Set(processed.flatMap(r => Object.keys(r)));
+  for (const k of allKeys) {
+    if (!finalHeaders.find(h => colKey(h) === colKey(k))) finalHeaders.push(k);
+  }
+
+  const ordered = reorderRows(processed, finalHeaders);
+
+  const allNewCols = new Set([
+    ...(canProjID    ? ['Project ID']        : []),
+    ...(canProjName  ? ['Project Name']      : []),
+    ...(canFinalStat ? ['Final Status']      : []),
+    ...(canLocation  ? ['Location (On/Off)'] : []),
+    ...(canTower     ? ['Tower']             : []),
+  ]);
+
+  logOk(`Job 2 complete — ${finalHeaders.length} columns × ${ordered.length} rows`);
+  return { data: ordered, newCols: allNewCols, matched, unmatched };
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   EXCEL WRITER — with #F2CEEF pink headers for new columns
+───────────────────────────────────────────────────────────────────────────── */
+function createWorksheetOnly(dataRows, newColsSet) {
+  const XLSX = window.XLSX;
+  const ws   = {};
+
+  const outputHeaders = Object.keys(dataRows[0] || {});
+  const numRows = dataRows.length;
+  const numCols = outputHeaders.length;
+
+  // Column letter map: normalised name → Excel column letter (A, B, … Z, AA …)
+  const clm = {};
+  outputHeaders.forEach((h, i) => { clm[colKey(h)] = colLetter(i); });
+
+  // Excel formula definitions — each returns a formula string or null if source cols absent
+  const FORMULA_DEFS = {
+    'final copilot lines': r =>
+      (clm['lines added'] && clm['lines deleted'])
+        ? `${clm['lines added']}${r}-${clm['lines deleted']}${r}` : null,
+    'ghcp pulse': r =>
+      (clm['lines added'] && clm['lines deleted'])
+        ? `${clm['lines added']}${r}-${clm['lines deleted']}${r}` : null,
+    'final git lines': r =>
+      (clm['added lines'] && clm['deleted lines'])
+        ? `${clm['added lines']}${r}-${clm['deleted lines']}${r}` : null,
+    'github pulse': r =>
+      (clm['added lines'] && clm['deleted lines'])
+        ? `${clm['added lines']}${r}-${clm['deleted lines']}${r}` : null,
+    'copilot usage > interactions': r =>
+      (clm['copilot usage'] && clm['copilot interactions'])
+        ? `${clm['copilot usage']}${r}>${clm['copilot interactions']}${r}` : null,
+    'final copilot <50% of final git': r =>
+      (clm['final copilot lines'] && clm['final git lines'])
+        ? `${clm['final copilot lines']}${r}<0.5*${clm['final git lines']}${r}` : null,
+    'added copilot <50% of added git': r =>
+      (clm['lines added'] && clm['added lines'])
+        ? `${clm['lines added']}${r}<0.5*${clm['added lines']}${r}` : null,
+    'final copilot <60% of final git': r =>
+      (clm['final copilot lines'] && clm['final git lines'])
+        ? `${clm['final copilot lines']}${r}<0.6*${clm['final git lines']}${r}` : null,
+    'added copilot <60% of added git': r =>
+      (clm['lines added'] && clm['added lines'])
+        ? `${clm['lines added']}${r}<0.6*${clm['added lines']}${r}` : null,
+    'either apex or copilot training complete': r => {
+      const ct = clm['copilot training complete'], apx = clm['apex learning assessment completed?'];
+      if (!ct && !apx) return null;
+      const orPart = [ct && `${ct}${r}="Completed"`, apx && `${apx}${r}="Completed"`].filter(Boolean).join(',');
+      return `IF(OR(${orPart}),"Completed","Not Completed")`;
+    },
+    'disposition parameter': r => {
+      const lic = clm['has a copilot license'], inter = clm['copilot interactions'], la = clm['lines added'];
+      if (!lic || !inter || !la) return null;
+      return `IF(${lic}${r}<>"Yes","No Copilot License",IF(AND(${inter}${r}>=0,${inter}${r}<=5),"Low user (Interaction 0-5)",IF(AND(${inter}${r}>=6,${inter}${r}<=50),IF(${la}${r}<100,"Average user (Interaction 6-50 and Copilot Added Lines <100)",IF(${la}${r}<=500,"Average user (Interaction 6-50 and Copilot Added Lines 100\u2013500)","Average user (Interaction 6-50 and Copilot Added Lines >500)")),IF(${la}${r}<100,"Power user (Interaction >50 and Copilot Added Lines <100)",IF(${la}${r}<=500,"Power user (Interaction >50 and Copilot Added Lines 100\u2013500)","Power user (Interaction >50 and Copilot Added Lines >500)")))))`;
+    },
+  };
+
+  // Internal key → Excel display name (for column name collisions)
+  const DISPLAY_NAMES = { 'Location (On/Off)': 'Location' };
+
+  // Hardcoded header fill colors — keyed by normalised column name
+  const COL_COLORS = {
+    // #D0E0E3
+    'business name': 'D0E0E3', 'name': 'D0E0E3', 'eid': 'D0E0E3',
+    'vzid': 'D0E0E3', 'title': 'D0E0E3', 'email': 'D0E0E3',
+    'location': 'D0E0E3', 'employee status': 'D0E0E3', 'vendor name': 'D0E0E3',
+    'worker id': 'D0E0E3', 'work oder id': 'D0E0E3', 'work order id': 'D0E0E3',
+    'related sow': 'D0E0E3',
+    // #FFF2CC
+    'tier 2 leader': 'FFF2CC', 'tier 3 leader': 'FFF2CC', 'tier 4 leader': 'FFF2CC',
+    'tier 5 leader': 'FFF2CC', 'tier 6 leader': 'FFF2CC', 'tier 7 leader': 'FFF2CC',
+    'tier 8 leader': 'FFF2CC', 'tier 9 leader': 'FFF2CC',
+    // #6FA8DC
+    'vendor paid subscription': '6FA8DC', 'has a copilot license': '6FA8DC',
+    'used agent mode': '6FA8DC', 'non agent mode acceptance rate': '6FA8DC',
+    'lines added': '6FA8DC', 'lines deleted': '6FA8DC', 'activation date': '6FA8DC',
+    'copilot usage': '6FA8DC', 'copilot interactions': '6FA8DC',
+    // #F9CB9C
+    'active gitlab account': 'F9CB9C', 'gitlab commits': 'F9CB9C',
+    'number of projects': 'F9CB9C', 'added lines': 'F9CB9C', 'deleted lines': 'F9CB9C',
+    // #F4CCCC
+    'is a current employee': 'F4CCCC', 'github id': 'F4CCCC',
+    'github login': 'F4CCCC', 'current copilot status': 'F4CCCC',
+  };
+
+  const hdrFont  = { name: 'Verizon NHG TX', sz: 12, bold: true, underline: true };
+  const dataFont = { name: 'Verizon NHG TX', sz: 10 };
+  const pinkFill = { patternType: 'solid', fgColor: { rgb: 'F2CEEF' } };
+  const border   = {
+    top:    { style: 'thin', color: { rgb: 'D0D0D0' } },
+    bottom: { style: 'thin', color: { rgb: 'D0D0D0' } },
+    left:   { style: 'thin', color: { rgb: 'D0D0D0' } },
+    right:  { style: 'thin', color: { rgb: 'D0D0D0' } },
+  };
+
+  let lastRgb = 'FFFFFF'; // tracks last known color — used for unrecognised existing columns
+
+  for (let c = 0; c < numCols; c++) {
+    const colName = outputHeaders[c];
+    const isNew   = newColsSet.has(colName);
+
+    let fill;
+    if (isNew) {
+      fill = pinkFill; // new columns always pink — unchanged
+    } else {
+      const rgb = COL_COLORS[colKey(colName)];
+      if (rgb) lastRgb = rgb;   // update tracker when column is in the map
+      // unknown column → inherit color of the nearest previous existing column
+      fill = { patternType: 'solid', fgColor: { rgb: lastRgb } };
+    }
+
+    // Header cell
+    const displayName  = DISPLAY_NAMES[colName] ?? colName;
+    const isComments   = colKey(colName) === 'comments';
+    ws[XLSX.utils.encode_cell({ r: 0, c })] = {
+      v: displayName, t: 's',
+      s: isComments
+        ? { font: { name: 'Verizon NHG TX', sz: 10 }, fill: { patternType: 'solid', fgColor: { rgb: 'FFFFFF' } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border }
+        : { font: hdrFont, fill, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border }
+    };
+
+    // Data cells — font only, no fill
+    const formulaDef = FORMULA_DEFS[colKey(colName)];
+    for (let r = 1; r <= numRows; r++) {
+      const val = dataRows[r - 1][colName];
+      if (val === null || val === undefined || val === '') continue;
+      const formula = (formulaDef && val !== '#N/A') ? formulaDef(r + 1) : null;
+      if (formula) {
+        const isBool = val === 'TRUE' || val === 'FALSE';
+        const cellV  = isBool ? val === 'TRUE' : val;
+        const cellT  = isBool ? 'b' : typeof val === 'number' ? 'n' : 's';
+        ws[XLSX.utils.encode_cell({ r, c })] = { v: cellV, t: cellT, f: formula, s: { font: dataFont } };
+      } else {
+        const t = typeof val === 'number' ? 'n' : val instanceof Date ? 'd' : 's';
+        ws[XLSX.utils.encode_cell({ r, c })] = { v: val, t, s: { font: dataFont } };
+      }
+    }
+  }
+
+  ws['!ref']        = XLSX.utils.encode_range({ r: 0, c: 0 }, { r: numRows, c: numCols - 1 });
+  ws['!autofilter'] = { ref: ws['!ref'] };
+  ws['!freeze']     = { xSplit: 0, ySplit: 1 };
+  ws['!cols']       = outputHeaders.map(h => {
+    const maxLen = Math.max(h.length, ...dataRows.slice(0, 200).map(r => String(r[h] ?? '').length));
+    return { wch: Math.min(Math.max(maxLen + 2, 10), 40) };
+  });
+
+  return ws;
+}
+
+function createWorkbook(dataRows, newColsSet, originalWs, sourceWb = null, targetSheetName = 'Copilot Gitlab Usage') {
+  const ws = createWorksheetOnly(dataRows, newColsSet);
+  const wb = window.XLSX.utils.book_new();
+  window.XLSX.utils.book_append_sheet(wb, ws, targetSheetName);
+  return wb;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   STYLES XML MERGER — appends new styles to original, returns offset
+───────────────────────────────────────────────────────────────────────────── */
+function mergeStylesXml(origXml, newXml) {
+  function extractSection(xml, tag) {
+    const m = xml.match(new RegExp(`<${tag}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${tag}>`));
+    return m ? m[1] : '';
+  }
+  function countElements(content, tag) {
+    return (content.match(new RegExp(`<${tag}(?:[\\s>\/])`, 'g')) || []).length;
+  }
+  function getCountAttr(xml, tag) {
+    const m = xml.match(new RegExp(`<${tag}[^>]+count="(\\d+)"`));
+    return m ? parseInt(m[1]) : null;
+  }
+  function appendToSection(xml, tag, content) {
+    const idx = xml.indexOf(`</${tag}>`);
+    return idx === -1 ? xml : xml.slice(0, idx) + content + xml.slice(idx);
+  }
+  function updateCountAttr(xml, tag, delta) {
+    return xml.replace(
+      new RegExp(`(<${tag}[^>]+count=")([0-9]+)(")`),
+      (m, p1, n, p3) => `${p1}${parseInt(n) + delta}${p3}`
+    );
+  }
+
+  const origFontsContent   = extractSection(origXml, 'fonts');
+  const origFillsContent   = extractSection(origXml, 'fills');
+  const origBordersContent = extractSection(origXml, 'borders');
+  const origXfsContent     = extractSection(origXml, 'cellXfs');
+
+  const newFontsContent    = extractSection(newXml, 'fonts');
+  const newFillsContent    = extractSection(newXml, 'fills');
+  const newBordersContent  = extractSection(newXml, 'borders');
+  let   newXfsContent      = extractSection(newXml, 'cellXfs');
+
+  const origFontCount   = getCountAttr(origXml, 'fonts')   ?? countElements(origFontsContent,   'font');
+  const origFillCount   = getCountAttr(origXml, 'fills')   ?? countElements(origFillsContent,   'fill');
+  const origBorderCount = getCountAttr(origXml, 'borders') ?? countElements(origBordersContent, 'border');
+  const origXfsCount    = getCountAttr(origXml, 'cellXfs') ?? countElements(origXfsContent,     'xf');
+
+  const newFontCount    = getCountAttr(newXml, 'fonts')   ?? countElements(newFontsContent,   'font');
+  const newFillCount    = getCountAttr(newXml, 'fills')   ?? countElements(newFillsContent,   'fill');
+  const newBorderCount  = getCountAttr(newXml, 'borders') ?? countElements(newBordersContent, 'border');
+  const newXfsCount     = getCountAttr(newXml, 'cellXfs') ?? countElements(newXfsContent,     'xf');
+
+  // Remap font/fill/border IDs in new cellXfs to account for original offsets
+  newXfsContent = newXfsContent
+    .replace(/fontId="(\d+)"/g,   (_, id) => `fontId="${parseInt(id) + origFontCount}"`)
+    .replace(/fillId="(\d+)"/g,   (_, id) => `fillId="${parseInt(id) + origFillCount}"`)
+    .replace(/borderId="(\d+)"/g, (_, id) => `borderId="${parseInt(id) + origBorderCount}"`);
+
+  let merged = origXml;
+  if (newFontCount > 0)   { merged = appendToSection(merged, 'fonts',   newFontsContent);   merged = updateCountAttr(merged, 'fonts',   newFontCount); }
+  if (newFillCount > 0)   { merged = appendToSection(merged, 'fills',   newFillsContent);   merged = updateCountAttr(merged, 'fills',   newFillCount); }
+  if (newBorderCount > 0) { merged = appendToSection(merged, 'borders', newBordersContent); merged = updateCountAttr(merged, 'borders', newBorderCount); }
+  if (newXfsCount > 0)    { merged = appendToSection(merged, 'cellXfs', newXfsContent);     merged = updateCountAttr(merged, 'cellXfs', newXfsCount); }
+
+  return { mergedStylesXml: merged, xfsOffset: origXfsCount };
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   ZIP SURGERY — replace target sheet, preserve all other sheets intact
+───────────────────────────────────────────────────────────────────────────── */
+async function buildOutputZip(processedWs, rawBuffer, targetSheetName) {
+  const JSZip = window.JSZip;
+  const XLSX  = window.XLSX;
+
+  // Write the processed sheet as a standalone mini-xlsx (inline strings — no SST)
+  const miniWb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(miniWb, processedWs, targetSheetName);
+  const miniBytes = XLSX.write(miniWb, { bookType: 'xlsx', type: 'array', cellStyles: true, bookSST: false });
+
+  // Open both ZIPs in parallel
+  const [origZip, miniZip] = await Promise.all([
+    JSZip.loadAsync(rawBuffer),
+    JSZip.loadAsync(miniBytes),
+  ]);
+
+  // Locate target sheet file path inside original ZIP via workbook.xml + rels
+  const origWbXml  = await origZip.file('xl/workbook.xml').async('string');
+  const origWbRels = await origZip.file('xl/_rels/workbook.xml.rels').async('string');
+
+  const escapedName = targetSheetName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const sheetNodeRe  = new RegExp(`<sheet[^>]+name="${escapedName}"[^>]+r:id="([^"]+)"`);
+  const sheetNodeRe2 = new RegExp(`<sheet[^>]+r:id="([^"]+)"[^>]+name="${escapedName}"`);
+  const sheetNodeMatch = origWbXml.match(sheetNodeRe) || origWbXml.match(sheetNodeRe2);
+
+  let sheetTarget;
+  if (sheetNodeMatch) {
+    const rId = sheetNodeMatch[1];
+    const relRe  = new RegExp(`<Relationship[^>]+Id="${rId}"[^>]+Target="([^"]+)"`);
+    const relRe2 = new RegExp(`<Relationship[^>]+Target="([^"]+)"[^>]+Id="${rId}"`);
+    const relMatch = origWbRels.match(relRe) || origWbRels.match(relRe2);
+    if (!relMatch) throw new Error(`Relationship ${rId} not found in workbook.xml.rels`);
+    sheetTarget = relMatch[1];
+  } else {
+    // Fallback: use first worksheet
+    const firstRel = origWbRels.match(/<Relationship[^>]+Target="(worksheets\/[^"]+)"/);
+    if (!firstRel) throw new Error('No worksheet found in original file');
+    sheetTarget = firstRel[1];
+  }
+  const sheetPath = sheetTarget.startsWith('/') ? sheetTarget.slice(1) : `xl/${sheetTarget}`;
+
+  // Get new sheet XML from mini-zip (first sheet)
+  const miniSheetFile = miniZip.file('xl/worksheets/sheet1.xml');
+  if (!miniSheetFile) throw new Error('Mini workbook sheet XML not found');
+  let newSheetXml = await miniSheetFile.async('string');
+
+  // Merge styles: append new styles to original, offset s= indices in new sheet
+  const origStylesFile = origZip.file('xl/styles.xml');
+  const miniStylesFile = miniZip.file('xl/styles.xml');
+  if (origStylesFile && miniStylesFile) {
+    const origStylesXml = await origStylesFile.async('string');
+    const miniStylesXml = await miniStylesFile.async('string');
+    const { mergedStylesXml, xfsOffset } = mergeStylesXml(origStylesXml, miniStylesXml);
+    if (xfsOffset > 0) {
+      newSheetXml = newSheetXml.replace(/ s="(\d+)"/g, (m, idx) => ` s="${parseInt(idx) + xfsOffset}"`);
+    }
+    origZip.file('xl/styles.xml', mergedStylesXml);
+  }
+
+  // Set workbook calcMode to manual — prevents extra sheet formulas from recalculating
+  // on Protected View → Enable Editing, while keeping <f> elements intact for formula bar
+  const wbXmlFile = origZip.file('xl/workbook.xml');
+  if (wbXmlFile) {
+    let wbXml = await wbXmlFile.async('string');
+    if (/<calcPr/i.test(wbXml)) {
+      // Update existing calcPr: set manual mode, remove fullCalcOnLoad
+      wbXml = wbXml
+        .replace(/(<calcPr[^>]*)\bcalcMode="[^"]*"/i, '$1calcMode="manual"')
+        .replace(/(<calcPr[^>]*)\bfullCalcOnLoad="[^"]*"/i, '$1');
+      // If calcMode attr wasn't present, inject it
+      if (!/calcMode="manual"/i.test(wbXml)) {
+        wbXml = wbXml.replace(/(<calcPr)/i, '$1 calcMode="manual"');
+      }
+    } else {
+      // No calcPr at all — insert one before </workbook>
+      wbXml = wbXml.replace(/<\/workbook>/i, '<calcPr calcMode="manual"/></workbook>');
+    }
+    origZip.file('xl/workbook.xml', wbXml);
+  }
+
+  // Replace target sheet in original ZIP
+  origZip.file(sheetPath, newSheetXml);
+
+  // Remove calcChain so Excel doesn't recalculate stale formula references on open
+  if (origZip.file('xl/calcChain.xml')) {
+    origZip.remove('xl/calcChain.xml');
+    // Remove calcChain relationship
+    const relsFile = origZip.file('xl/_rels/workbook.xml.rels');
+    if (relsFile) {
+      const relsXml = await relsFile.async('string');
+      origZip.file('xl/_rels/workbook.xml.rels',
+        relsXml.replace(/<Relationship[^>]+calcChain[^>]*\/>/g, ''));
+    }
+    // Remove calcChain from [Content_Types].xml
+    const ctFile = origZip.file('[Content_Types].xml');
+    if (ctFile) {
+      const ctXml = await ctFile.async('string');
+      origZip.file('[Content_Types].xml',
+        ctXml.replace(/<Override[^>]+calcChain[^>]*\/>/gi, ''));
+    }
+  }
+
+  return origZip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' });
+}
+
+function triggerDataUrlDownload(blob, filename) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const a = document.createElement('a');
+    a.href = reader.result;
+    a.download = filename;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    logOk(`Downloaded: ${filename}`);
+  };
+  reader.onerror = () => logE(`Download failed: could not encode file "${filename}".`);
+  reader.readAsDataURL(blob);
+}
+
+function downloadWorkbook(wb, filename) {
+  const data = window.XLSX.write(wb, { bookType: 'xlsx', type: 'array', cellStyles: true });
+  const blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  triggerDataUrlDownload(blob, filename);
+}
+
+function downloadBytes(bytes, filename) {
+  const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  triggerDataUrlDownload(blob, filename);
+}
+
+function downloadEntry(idx) {
+  const entry = App.pendingDownloads[idx];
+  if (entry.bytes) {
+    downloadBytes(entry.bytes, entry.filename);
+  } else {
+    downloadWorkbook(entry.wb, entry.filename);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   RESULTS UI
+───────────────────────────────────────────────────────────────────────────── */
+function showResults(downloads, stats) {
+  const card = document.getElementById('results-card');
+  const sub  = document.getElementById('result-sub');
+  const dlg  = document.getElementById('dl-grid');
+  const stg  = document.getElementById('stats-row');
+
+  sub.textContent = `${downloads.length} file(s) ready to download.`;
+
+  // Stats
+  stg.innerHTML = stats.map(s => `
+    <div class="stat-box">
+      <div class="stat-num">${s.value}</div>
+      <div class="stat-lbl">${s.label}</div>
+    </div>`).join('');
+
+  // Download cards
+  dlg.innerHTML = downloads.map((d, i) => `
+    <div class="dl-card">
+      <div class="dl-file-ico">📗</div>
+      <div class="dl-info">
+        <div class="dl-fname">${escHtml(d.filename)}</div>
+        <div class="dl-fmeta">${d.rows.toLocaleString()} rows × ${d.cols.toLocaleString()} columns · XLSX</div>
+      </div>
+      <button class="btn-dl" onclick="downloadEntry(${i})">
+        ⬇ Download
+      </button>
+    </div>`).join('');
+
+  card.className = 'results-card show';
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   MAIN PROCESS FUNCTION
+───────────────────────────────────────────────────────────────────────────── */
+async function runProcess() {
+  if (App.processing) return;
+  if (!window.XLSX) { logE('XLSX library not loaded yet. Please wait a moment and try again.'); return; }
+
+  const sc = detectScenario();
+  if (!sc.valid) { logE('Invalid scenario — please check uploaded files.'); return; }
+
+  App.processing = true;
+  App.pendingDownloads = [];
+  document.getElementById('btn-process').disabled = true;
+  document.getElementById('btn-process').classList.add('running');
+  document.getElementById('btn-label').textContent = 'Processing…';
+  document.getElementById('results-card').className = 'results-card'; // hide
+  showProgress(true);
+
+  try {
+    /* ── STEP 1: Read files ── */
+    setProgress(5, 'Reading files…');
+    log('');
+    logI(`Scenario ${sc.id}: ${sc.label}`);
+
+    if (!App.data.current) {
+      logI('Reading current batch file…');
+      const r = await readExcelFile(App.files.current, 'Copilot Gitlab Usage');
+      App.data.current = r.data; App.ws.current = r.ws; App.headers.current = r.headers;
+      App.wb.current = r.wb; App.rawBuffer.current = r.rawBuffer;
+      logOk(`Current batch: ${App.data.current.length} rows, ${App.headers.current.length} columns (sheet: "${r.sheetName}")`);
+    }
+
+    if (App.files.previous && !App.data.previous) {
+      logI('Reading previous batch file…');
+      setProgress(15, 'Reading previous batch…');
+      const rp = await readExcelFile(App.files.previous, 'Copilot Gitlab Usage');
+      App.data.previous = rp.data;
+      logOk(`Previous batch: ${App.data.previous.length} rows, ${Object.keys(App.data.previous[0]||{}).length} columns (sheet: "${rp.sheetName}")`);
+    }
+
+    if (App.files.allocation && !App.data.allocation) {
+      logI('Reading allocation file…');
+      setProgress(20, 'Reading allocation sheet…');
+      const ra = await readExcelFile(App.files.allocation, 'Verizon VDSI & Business');
+      App.data.allocation = ra.data;
+      logOk(`Allocation: ${App.data.allocation.length} rows, ${Object.keys(App.data.allocation[0]||{}).length} columns (sheet: "${ra.sheetName}")`);
+    }
+
+    let workingData = App.data.current;
+    let allNewCols  = new Set();
+    let statsArr    = [];
+    let t1Stats = null, t2Stats = null;
+
+    /* ── STEP 2: Job 1 ── */
+    if (sc.id === 1 || sc.id === 2) {
+      setProgress(35, 'Running Job 1 — EID merge…');
+      await tick(); // let UI update
+      const t1 = processTask1(App.data.current, App.data.previous, App.headers.current);
+      workingData = t1.data;
+      t1.newCols.forEach(c => allNewCols.add(c));
+      t1Stats = t1;
+      setProgress(60, 'Job 1 complete…');
+    }
+
+    /* ── Scenario 3: Job 1 was skipped but its columns may already exist in the
+       current batch from a prior run — mark them pink so they stay identified ── */
+    if (sc.id === 3) {
+      for (const col of JOB1_COLS) {
+        if (hasCol(workingData, col)) allNewCols.add(col);
+      }
+    }
+
+    /* ── STEP 3: Job 2 ── */
+    if (sc.id === 1 || sc.id === 3) {
+      setProgress(70, 'Running Job 2 — Allocation merge…');
+      await tick();
+      const t2 = processTask2(workingData, App.data.allocation, sc.id === 3 ? App.headers.current : null);
+      workingData = t2.data;
+      t2.newCols.forEach(c => allNewCols.add(c));
+      t2Stats = t2;
+      setProgress(88, 'Job 2 complete…');
+    }
+
+    /* ── STEP 4: Build output ── */
+    setProgress(92, 'Generating Excel file…');
+    await tick();
+
+    const filename = (sc.id === 2)
+      ? 'Job1_Only – CTS - Copilot Gitlab Usage Weekly.xlsx'
+      : 'New Batch - CTS - Copilot Gitlab Usage Weekly.xlsx';
+
+    const finalCols   = Object.keys(workingData[0] || {});
+    const newColsAdded = [...allNewCols];
+
+    let outputBytes = null;
+    let outputWb    = null;
+
+    if (App.rawBuffer.current && window.JSZip) {
+      try {
+        logI('Applying ZIP surgery to preserve extra sheet formatting…');
+        setProgress(94, 'Building ZIP…');
+        const processedWs = createWorksheetOnly(workingData, allNewCols);
+        outputBytes = await buildOutputZip(processedWs, App.rawBuffer.current, 'Copilot Gitlab Usage');
+        logOk('ZIP surgery complete — extra sheet formatting & formulas preserved.');
+      } catch (zipErr) {
+        logW(`ZIP surgery failed (${zipErr.message}) — falling back to standard output.`);
+        outputBytes = null;
+      }
+    }
+
+    if (!outputBytes) {
+      outputWb = createWorkbook(workingData, allNewCols, App.ws.current, App.wb.current, 'Copilot Gitlab Usage');
+    }
+
+    App.pendingDownloads.push({ wb: outputWb, bytes: outputBytes, filename, rows: workingData.length, cols: finalCols.length });
+
+    /* ── STEP 5: Build stats ── */
+    const totalNew = allNewCols.size;
+    statsArr = [
+      { label: 'Total Rows',    value: workingData.length.toLocaleString() },
+      { label: 'Total Columns', value: finalCols.length.toLocaleString() },
+      { label: 'New Columns',   value: totalNew },
+    ];
+    if (t1Stats) statsArr.push({ label: 'J1 EID Matched',  value: t1Stats.matched.toLocaleString() });
+    if (t2Stats) statsArr.push({ label: 'J2 ID Matched',   value: t2Stats.matched.toLocaleString() });
+
+    setProgress(100, 'Done!');
+
+    log('');
+    logOk(`━━━━ Processing complete! Output: ${filename} ━━━━`);
+    logOk(`Rows: ${workingData.length} | Columns: ${finalCols.length} | New columns added: ${totalNew}`);
+    if (newColsAdded.length > 0) logOk(`New cols: ${newColsAdded.join(', ')}`);
+
+    showResults(
+      [{ filename, rows: workingData.length, cols: finalCols.length }],
+      statsArr
+    );
+
+  } catch (err) {
+    logE('Error: ' + err.message);
+    console.error(err);
+    setProgress(0, 'Error occurred');
+  } finally {
+    App.processing = false;
+    document.getElementById('btn-process').disabled = false;
+    document.getElementById('btn-process').classList.remove('running');
+    document.getElementById('btn-label').textContent = 'Run BatchFlow';
+    setTimeout(() => showProgress(false), 1500);
+    updateScenario();
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   THEME TOGGLE
+───────────────────────────────────────────────────────────────────────────── */
+function toggleTheme() {
+  const isDark = document.body.classList.toggle('dark');
+  document.getElementById('btn-theme').textContent = isDark ? '☀️' : '🌙';
+  localStorage.setItem('bfm-theme', isDark ? 'dark' : 'light');
+}
+
+function toggleInfoModal() {
+  document.getElementById('info-overlay').classList.toggle('open');
+}
+function handleInfoOverlayClick(e) {
+  if (e.target === document.getElementById('info-overlay')) toggleInfoModal();
+}
+
+let _toastTimer = null;
+function showErrorToast(msg) {
+  const toast = document.getElementById('error-toast');
+  document.getElementById('error-toast-msg').textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(hideErrorToast, 5000);
+}
+function hideErrorToast() {
+  document.getElementById('error-toast').classList.remove('show');
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   UTILITIES
+───────────────────────────────────────────────────────────────────────────── */
+function tick() { return new Promise(r => setTimeout(r, 0)); }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   INIT
+───────────────────────────────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  // Restore saved theme preference
+  if (localStorage.getItem('bfm-theme') === 'dark') {
+    document.body.classList.add('dark');
+    document.getElementById('btn-theme').textContent = '☀️';
+  }
+
+  updateScenario();
+  appLog('PLAIN', 'Application ready. Waiting for files…');
+  appLog('INFO',  '  ⓘ  Zero data transmission — your files are read and processed entirely within this browser.');
+  appLog('INFO',  '  ⓘ  Supported: .xlsx and .xls files. Max tested: 5,000+ rows.');
+
+  if (window.location.protocol === 'file:') {
+    appLog('WARN', '  ⚠  Opened as local file (file://). Some browsers block file reads in this mode.');
+    appLog('WARN', '  ⚠  If you get "File read failed", use Live Server / VS Code extension, or deploy to SharePoint.');
+  }
+
+  // Verify FileReader works in this environment
+  (function testFileReader() {
+    try {
+      const blob = new Blob([new Uint8Array([0])]);
+      const r = new FileReader();
+      r.onload = () => appLog('PLAIN', '  ✔  FileReader API: OK');
+      r.onerror = () => appLog('ERROR', '  ✖  FileReader API blocked — file processing will fail. Check browser/OS security settings.');
+      r.readAsArrayBuffer(blob);
+    } catch (e) {
+      appLog('ERROR', '  ✖  FileReader API unavailable: ' + e.message);
+    }
+  })();
+
+  appLog('PLAIN', '');
+});
+</script>
+</body>
+</html>
