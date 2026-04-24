@@ -2,11 +2,12 @@ import { NavLink } from 'react-router-dom'
 import './Sidebar.css'
 
 const apps = [
-  { path: '/ghcp-interaction', label: 'GHCP Interaction Usage Compare', icon: '📊' },
+  { path: '/ghcp-interaction', label: 'GHCP Usage Compare', icon: '📊' },
   { path: '/copilot-usage', label: 'CoPilot Usage Report', icon: '🤖' },
   { path: '/weekly-status', label: 'Weekly Status Report', icon: '📅' },
   { path: '/sprint-productivity', label: 'Sprint Productivity Analytics', icon: '⚡' },
-  { path: '/copilot-vs-git', label: 'Copilot vs Git Analytics', icon: '🔀' },
+  { path: '/copilot-vs-git', label: 'Copilot vs Git', icon: '🔀' },
+  { path: '/batch-flow', label: 'BatchFlow', icon: '🔄' },
 ]
 
 export default function Sidebar({ isOpen, onClose }) {

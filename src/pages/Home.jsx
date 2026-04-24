@@ -4,7 +4,7 @@ import './Home.css'
 const apps = [
   {
     path: '/ghcp-interaction',
-    title: 'GHCP Interaction Usage Compare',
+    title: 'GHCP Usage Compare',
     description: 'Compare GitHub Copilot interaction usage metrics across teams and time periods.',
     icon: '📊',
   },
@@ -28,9 +28,15 @@ const apps = [
   },
   {
     path: '/copilot-vs-git',
-    title: 'Copilot vs Git Analytics Dashboard and Tower Metrics',
+    title: 'Copilot vs Git',
     description: 'Side-by-side comparison of Copilot-assisted commits vs standard Git activity with Tower metrics.',
     icon: '🔀',
+  },
+  {
+    path: '/batch-flow',
+    title: 'BatchFlow',
+    description: 'Monitor and analyze batch processing workflows and pipeline execution metrics.',
+    icon: '🔄',
   },
 ]
 

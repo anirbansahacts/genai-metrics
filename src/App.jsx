@@ -8,6 +8,7 @@ import CopilotUsage from './pages/CopilotUsage'
 import WeeklyStatus from './pages/WeeklyStatus'
 import SprintProductivity from './pages/SprintProductivity'
 import CopilotVsGit from './pages/CopilotVsGit'
+import BatchFlow from './pages/BatchFlow'
 import UploadPortal from './pages/UploadPortal'
 
 export default function App() {
@@ -35,6 +36,7 @@ export default function App() {
             <Route path="/weekly-status" element={<WeeklyStatus />} />
             <Route path="/sprint-productivity" element={<SprintProductivity />} />
             <Route path="/copilot-vs-git" element={<CopilotVsGit />} />
+            <Route path="/batch-flow" element={<BatchFlow />} />
             <Route path="/upload" element={<UploadPortal />} />
           </Routes>
         </main>
