@@ -18,7 +18,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
       <aside className={`sidebar ${isOpen ? 'open' : 'closed'}`}>
         <div className="sidebar-inner">
-          <div className="sidebar-section-label">Dashboards</div>
+          <div className="sidebar-section-label">APPLICATIONS</div>
           <nav>
             <ul className="sidebar-nav">
               {apps.map(({ path, label, icon }) => (
