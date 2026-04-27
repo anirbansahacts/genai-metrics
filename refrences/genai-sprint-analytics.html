@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GenAI Sprint Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0D1117;--bg2:#161B22;--bg3:#1C2128;--bg4:#21262D;
+  --border:#30363D;--border2:#3D444D;
+  --txt:#E6EDF3;--txt2:#8B949E;--txt3:#6E7681;
+  --accent:#39D98A;--accent-dim:rgba(57,217,138,0.12);
+  --blue:#58A6FF;--orange:#F0883E;--pink:#FF7EB6;
+  --purple:#BC8CFF;--yellow:#E3B341;--red:#F85149;
+  --radius:10px;--radius-lg:14px;--radius-xl:20px;
+}
+html{scroll-behavior:smooth;}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:var(--bg2);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+
+/* ── Topbar ── */
+.topbar{position:sticky;top:0;z-index:200;background:rgba(13,17,23,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:54px;gap:10px;}
+.brand{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.brand-icon{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;}
+.brand-icon svg{width:16px;height:16px;fill:var(--bg);}
+.brand-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--txt);}
+.brand-name span{color:var(--accent);}
+.topbar-nav{display:flex;gap:2px;}
+.nav-btn{background:none;border:none;cursor:pointer;font-family:'Outfit',sans-serif;font-size:12px;color:var(--txt2);padding:5px 10px;border-radius:6px;transition:all 0.15s;white-space:nowrap;}
+.nav-btn:hover{background:var(--bg3);color:var(--txt);}
+.nav-btn.active{background:var(--accent-dim);color:var(--accent);font-weight:500;}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.icon-btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 8px;cursor:pointer;display:flex;align-items:center;gap:4px;font-size:11px;color:var(--txt2);font-family:'Outfit',sans-serif;transition:all 0.15s;white-space:nowrap;}
+.icon-btn:hover{background:var(--bg4);border-color:var(--border2);color:var(--txt);}
+.icon-btn svg{width:12px;height:12px;fill:currentColor;}
+.upload-btn{display:flex;align-items:center;gap:5px;background:var(--accent);color:var(--bg);border:none;border-radius:7px;padding:6px 13px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.upload-btn:hover{background:#4DEBA0;}
+.upload-btn svg{width:13px;height:13px;fill:var(--bg);}
+.reset-btn{display:flex;align-items:center;gap:4px;background:transparent;color:var(--txt3);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-family:'Outfit',sans-serif;font-size:11px;cursor:pointer;transition:all 0.2s;}
+.reset-btn:hover{color:var(--red);border-color:var(--red);}
+.reset-btn svg{width:12px;height:12px;fill:currentColor;}
+.sprint-badge{font-family:'DM Mono',monospace;font-size:11px;color:var(--txt2);background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:3px 8px;}
+input[type=file]{display:none;}
+
+/* ── Pages ── */
+.page{display:none;}
+.page.active{display:block;}
+
+/* ── Hero Upload ── */
+#heroPage{min-height:calc(100vh - 54px);display:none;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1.5rem;position:relative;}
+#heroPage.active{display:flex;}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 30%,rgba(57,217,138,0.06) 0%,transparent 70%);pointer-events:none;}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:40px 40px;opacity:0.18;pointer-events:none;}
+.hero-content{position:relative;z-index:1;text-align:center;max-width:680px;width:100%;}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:var(--accent-dim);border:1px solid rgba(57,217,138,0.3);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:500;color:var(--accent);margin-bottom:1.5rem;}
+.hero-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(1.3);}}
+.hero-title{font-family:'Syne',sans-serif;font-size:clamp(1.8rem,4vw,3rem);font-weight:800;line-height:1.1;letter-spacing:-1.5px;margin-bottom:.8rem;}
+.hero-title .accent{color:var(--accent);}
+.hero-sub{font-size:14px;color:var(--txt2);line-height:1.7;margin-bottom:2rem;max-width:500px;margin-left:auto;margin-right:auto;}
+.drop-zone{background:var(--bg2);border:2px dashed var(--border2);border-radius:var(--radius-xl);padding:2rem 1.5rem;cursor:pointer;transition:all 0.25s;width:100%;max-width:540px;margin:0 auto 1.5rem;}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--accent);background:var(--accent-dim);transform:scale(1.005);}
+.drop-icon{width:50px;height:50px;background:var(--accent-dim);border:1px solid rgba(57,217,138,0.3);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto .8rem;}
+.drop-icon svg{width:24px;height:24px;fill:var(--accent);}
+.drop-zone h3{font-size:15px;font-weight:600;color:var(--txt);margin-bottom:5px;}
+.drop-zone p{font-size:12px;color:var(--txt2);line-height:1.6;}
+.required-cols{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:.8rem;padding-top:.8rem;border-top:1px solid var(--border);}
+.col-pill{font-family:'DM Mono',monospace;font-size:9px;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:2px 7px;color:var(--txt3);}
+.hero-actions{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:1rem;}
+.template-btn{display:inline-flex;align-items:center;gap:5px;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:7px 14px;font-size:12px;color:var(--txt2);cursor:pointer;font-family:'Outfit',sans-serif;transition:all 0.15s;}
+.template-btn:hover{background:var(--bg4);color:var(--txt);border-color:var(--border);}
+.template-btn svg{width:13px;height:13px;fill:currentColor;}
+.file-chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:.8rem;}
+.file-chip{display:inline-flex;align-items:center;gap:5px;background:var(--bg3);border:1px solid var(--border2);border-radius:16px;padding:4px 10px;font-size:11px;color:var(--txt2);}
+.file-chip .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);}
+.file-chip button{background:none;border:none;cursor:pointer;color:var(--txt3);font-size:14px;line-height:1;padding:0;margin-left:2px;}
+.file-chip button:hover{color:var(--red);}
+
+/* ── Dashboard layout ── */
+.dash-layout{display:flex;min-height:calc(100vh - 54px);}
+.sidebar{width:200px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);padding:1.2rem .8rem;position:sticky;top:54px;height:calc(100vh - 54px);overflow-y:auto;}
+.sidebar-label{font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--txt3);padding:0 8px;margin-bottom:7px;}
+.sprint-btn{display:flex;align-items:center;gap:7px;width:100%;text-align:left;background:none;border:none;cursor:pointer;color:var(--txt2);font-family:'Outfit',sans-serif;font-size:12px;padding:7px 9px;border-radius:7px;transition:all 0.13s;margin-bottom:2px;}
+.sprint-btn:hover{background:var(--bg3);color:var(--txt);}
+.sprint-btn.active{background:var(--accent-dim);color:var(--accent);font-weight:500;}
+.sprint-btn .sprint-dot{width:5px;height:5px;border-radius:50%;background:var(--border2);flex-shrink:0;}
+.sprint-btn.active .sprint-dot{background:var(--accent);}
+.sprint-btn .sprint-prod{margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;background:var(--bg4);border-radius:3px;padding:1px 5px;color:var(--txt3);}
+.sprint-btn.active .sprint-prod{background:rgba(57,217,138,0.15);color:var(--accent);}
+.sidebar-divider{height:1px;background:var(--border);margin:10px 0;}
+.main{flex:1;padding:1.5rem;overflow-x:hidden;min-width:0;}
+
+/* ── Section heading ── */
+.sec-heading{font-family:'Syne',sans-serif;font-size:11px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;}
+
+/* ── KPIs ── */
+.kpi-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1.5rem;}
+.kpi-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;position:relative;overflow:hidden;}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kpi-color,var(--accent));opacity:0.6;}
+.kpi-label{font-size:10px;color:var(--txt3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;}
+.kpi-value{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--txt);line-height:1;margin-bottom:3px;}
+.kpi-sub{font-size:10px;color:var(--txt3);}
+.kpi-delta{font-size:10px;font-weight:500;margin-top:3px;}
+.kpi-delta.up{color:var(--accent);} .kpi-delta.down{color:var(--red);}
+
+/* ── Chart cards ── */
+.charts-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.1rem 1.25rem;margin-bottom:14px;}
+.chart-card:last-child{margin-bottom:0;}
+.chart-top-row{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:7px;margin-bottom:12px;}
+.chart-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--txt);}
+.chart-subtitle{font-size:10px;color:var(--txt3);margin-top:2px;}
+.chart-actions{display:flex;gap:5px;align-items:center;flex-wrap:wrap;}
+.chart-wrap{position:relative;width:100%;}
+.legend-strip{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--txt2);}
+.legend-swatch{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+select{font-family:'Outfit',sans-serif;font-size:11px;background:var(--bg3);color:var(--txt);border:1px solid var(--border2);border-radius:6px;padding:4px 8px;cursor:pointer;outline:none;}
+select:focus{border-color:var(--accent);}
+
+/* ── Matrix table ── */
+.data-table-wrap{overflow-x:auto;}
+.matrix-table{border-collapse:collapse;font-size:11px;min-width:100%;}
+.matrix-table th,.matrix-table td{white-space:nowrap;}
+.matrix-table .th-tower{font-family:'Outfit',sans-serif;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--txt3);padding:7px 12px;text-align:left;background:var(--bg3);border-bottom:1px solid var(--border);border-right:2px solid var(--border2);position:sticky;left:0;z-index:2;}
+.matrix-table .th-sprint{font-family:'Syne',sans-serif;font-size:11px;font-weight:600;color:var(--accent);padding:7px 10px;text-align:center;background:var(--bg3);border-bottom:1px solid var(--border2);}
+.matrix-table .th-metric{font-family:'DM Mono',monospace;font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.2px;padding:4px 8px;text-align:right;background:var(--bg4);border-bottom:1px solid var(--border);}
+.matrix-table .th-metric-usd{color:var(--blue);} .matrix-table .th-metric-usp{color:var(--purple);}
+.matrix-table .th-metric-sub{color:var(--orange);} .matrix-table .th-metric-hrs{color:var(--yellow);}
+.matrix-table .th-metric-ssp{color:var(--accent);} .matrix-table .th-metric-pct{color:var(--pink);}
+.matrix-table .td-tower-name{font-family:'Outfit',sans-serif;font-size:11px;font-weight:500;color:var(--txt);padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--border);border-right:2px solid var(--border2);position:sticky;left:0;z-index:1;cursor:pointer;user-select:none;}
+.matrix-table .td-tower-name:hover{background:var(--bg3);}
+.matrix-table .td-tower-name .expand-icon{display:inline-block;margin-right:5px;font-size:10px;transition:transform 0.2s;color:var(--txt3);}
+.matrix-table .td-tower-name.expanded .expand-icon{transform:rotate(90deg);}
+.matrix-table .td-val{font-family:'DM Mono',monospace;font-size:10px;padding:8px 8px;text-align:right;border-bottom:1px solid var(--border);}
+.matrix-table tr:hover .td-val{background:rgba(255,255,255,0.02);}
+.matrix-table .total-row .td-tower-name{color:var(--accent);font-weight:700;background:rgba(57,217,138,0.07);border-top:1px solid rgba(57,217,138,0.25);}
+.matrix-table .total-row .td-val{background:rgba(57,217,138,0.05);border-top:1px solid rgba(57,217,138,0.18);font-weight:600;}
+/* drill-down rows */
+.matrix-table tr.drill-row{display:none;}
+.matrix-table tr.drill-row.visible{display:table-row;}
+.matrix-table .drill-row .td-tower-name{font-size:10px;color:var(--txt2);font-weight:400;padding-left:26px;background:var(--bg3);}
+.matrix-table .drill-row .td-val{background:var(--bg3);font-size:10px;}
+.cv-usd{color:var(--blue)!important;} .cv-usp{color:var(--purple)!important;}
+.cv-sub{color:var(--orange)!important;} .cv-hrs{color:var(--yellow)!important;}
+.cv-ssp{color:var(--accent)!important;} .cv-pct{color:var(--pink)!important;font-weight:600!important;}
+
+/* ── Part tables ── */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem;flex-wrap:wrap;gap:7px;}
+.section-count{font-family:'DM Mono',monospace;font-size:10px;color:var(--txt3);background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:2px 7px;}
+.part-table-wrap{overflow-x:auto;}
+.part-table{width:100%;border-collapse:collapse;font-size:11px;}
+.part-table th{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--txt3);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--bg3);}
+.part-table td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--txt2);vertical-align:middle;}
+.part-table tr:last-child td{border-bottom:none;}
+.part-table tr:hover td{background:rgba(255,255,255,0.02);}
+.td-tower{font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.4px;color:var(--txt3);}
+.td-proj{font-weight:500;color:var(--txt)!important;}
+.td-rank{text-align:center;}
+.rank-badge{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--bg4);border:1px solid var(--border2);font-size:9px;color:var(--txt3);font-family:'DM Mono',monospace;}
+.rank-badge.top1{background:rgba(227,179,65,.15);border-color:rgba(227,179,65,.4);color:#E3B341;}
+.rank-badge.top2{background:rgba(88,166,255,.1);border-color:rgba(88,166,255,.3);color:#58A6FF;}
+.rank-badge.top3{background:rgba(57,217,138,.1);border-color:rgba(57,217,138,.3);color:#39D98A;}
+.not-part-label{font-size:9px;background:rgba(248,81,73,.1);color:#F85149;border:1px solid rgba(248,81,73,.25);border-radius:3px;padding:2px 6px;margin-left:5px;}
+/* drill rows in part table */
+.part-table .tower-row td:first-child{cursor:pointer;}
+.part-table .tower-row .expand-icon{display:inline-block;margin-right:4px;font-size:9px;transition:transform 0.2s;color:var(--txt3);}
+.part-table .tower-row.expanded .expand-icon{transform:rotate(90deg);}
+.part-table .drill-proj-row{display:none;}
+.part-table .drill-proj-row.visible{display:table-row;}
+.part-table .drill-proj-row td{padding-left:24px;background:var(--bg3);font-size:10px;}
+
+/* ── Adoption table ── */
+.adoption-table{width:100%;border-collapse:collapse;font-size:11px;}
+.adoption-table th{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--txt3);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);background:var(--bg3);white-space:nowrap;}
+.adoption-table td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--txt2);vertical-align:middle;}
+.adoption-table tr:hover td{background:rgba(255,255,255,0.02);}
+.adoption-table .drill-row{display:none;}
+.adoption-table .drill-row.visible{display:table-row;}
+.adoption-table .drill-row td{padding-left:24px;background:var(--bg3);font-size:10px;}
+.adopt-pct-bar{display:flex;align-items:center;gap:6px;}
+.adopt-pct-track{flex:1;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;min-width:60px;}
+.adopt-pct-fill{height:100%;border-radius:3px;transition:width 0.4s;}
+
+/* ── AI Inference page ── */
+#aiPage .ai-layout{display:grid;grid-template-columns:300px 1fr;gap:14px;min-height:calc(100vh - 54px - 3rem);}
+.ai-panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;overflow-y:auto;}
+.ai-controls{display:flex;flex-direction:column;gap:10px;}
+.ai-scope-label{font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.ai-run-btn{display:flex;align-items:center;justify-content:center;gap:6px;background:var(--accent);color:var(--bg);border:none;border-radius:8px;padding:9px 0;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;width:100%;}
+.ai-run-btn:hover{background:#4DEBA0;}
+.ai-run-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.ai-run-btn svg{width:15px;height:15px;fill:var(--bg);}
+.ai-result{flex:1;}
+.ai-result-inner{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;min-height:300px;}
+.ai-section{margin-bottom:1.25rem;}
+.ai-section-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--accent);margin-bottom:.6rem;display:flex;align-items:center;gap:6px;}
+.ai-section-title::before{content:'';width:3px;height:14px;background:var(--accent);border-radius:2px;}
+.ai-text{font-size:13px;color:var(--txt2);line-height:1.75;white-space:pre-wrap;}
+.ai-loading{display:flex;align-items:center;gap:10px;color:var(--txt3);font-size:13px;padding:2rem;}
+.ai-loading svg{width:20px;height:20px;fill:var(--accent);animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.ai-trend-wrap{margin-top:1rem;}
+.ai-empty{text-align:center;padding:3rem;color:var(--txt3);font-size:13px;}
+.ai-action-chip{display:inline-block;background:rgba(57,217,138,.08);border:1px solid rgba(57,217,138,.2);border-radius:5px;padding:3px 8px;font-size:11px;color:var(--accent);margin:2px;}
+.ai-warn-chip{display:inline-block;background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.2);border-radius:5px;padding:3px 8px;font-size:11px;color:var(--red);margin:2px;}
+@media(max-width:900px){#aiPage .ai-layout{grid-template-columns:1fr;}
+  .charts-grid-2{grid-template-columns:1fr;}
+  .sidebar{display:none;}}
+@media(max-width:640px){.main{padding:1rem;}.topbar{padding:0 1rem;}.kpi-strip{grid-template-columns:repeat(2,1fr);}}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;background:var(--bg3);border:1px solid var(--border2);border-radius:9px;padding:10px 16px;font-size:12px;color:var(--txt);box-shadow:0 8px 24px rgba(0,0,0,.4);transform:translateY(80px);opacity:0;transition:all .3s;pointer-events:none;max-width:300px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.error{border-color:var(--red);color:var(--red);}
+.toast.success{border-color:var(--accent);color:var(--accent);}
+.empty{text-align:center;padding:2rem;color:var(--txt3);font-size:12px;}
+.fade-in{animation:fadeIn .3s ease both;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.filter-bar label{font-size:11px;color:var(--txt2);}
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-icon"><svg viewBox="0 0 24 24"><path d="M13,2.05V4.05C17.39,4.59 20.5,8.58 19.96,12.97C19.5,16.61 16.64,19.5 13,19.93V21.93C18.5,21.38 22.5,16.5 21.95,11C21.5,6.25 17.73,2.5 13,2.05M11,2.06C9.05,2.25 7.19,3 5.67,4.26L7.1,5.74C8.22,4.84 9.57,4.26 11,4.06V2.06M4.26,5.67C3,7.19 2.25,9.04 2.05,11H4.05C4.24,9.58 4.8,8.23 5.69,7.1L4.26,5.67M2.06,13C2.26,14.96 3.03,16.81 4.27,18.33L5.69,16.9C4.81,15.77 4.24,14.42 4.06,13H2.06M7.1,18.37L5.67,19.74C7.18,21 9.04,21.79 11,22V20C9.58,19.82 8.23,19.25 7.1,18.37Z"/></svg></div>
+    <span class="brand-name">GenAI <span>Sprint</span></span>
+  </div>
+  <nav class="topbar-nav" id="topNav" style="display:none;">
+    <button class="nav-btn active" onclick="showPage('dashPage','dashboard')">Dashboard</button>
+    <button class="nav-btn" onclick="showPage('adoptionPage','adoption')">GenAI Adoption</button>
+    <button class="nav-btn" onclick="showPage('aiPage','ai')">AI Insights</button>
+  </nav>
+  <div class="topbar-right">
+    <span class="sprint-badge" id="sprintBadge" style="display:none;"></span>
+    <button class="reset-btn" id="resetBtn" style="display:none;" onclick="resetAll()">
+      <svg viewBox="0 0 24 24"><path d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"/></svg>
+      Reset
+    </button>
+    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+      <svg viewBox="0 0 24 24"><path d="M9,16V10H5L12,3L19,10H15V16H9M5,20V18H19V20H5Z"/></svg>Upload XLSX
+    </button>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" multiple>
+  </div>
+</header>
+
+<!-- Hero / Upload Page -->
+<section id="heroPage" class="active">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-badge">GenAI Sprint Intelligence Platform</div>
+    <h1 class="hero-title">Sprint Productivity<br><span class="accent">Analytics</span></h1>
+    <p class="hero-sub">Upload your sprint Excel files to visualize GenAI productivity, compare towers, and get AI-powered insights across sprints.</p>
+    <div class="hero-actions">
+      <button class="template-btn" onclick="downloadTemplate()">
+        <svg viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M10,19L6,15H9V11H11V15H14L10,19Z"/></svg>
+        Download CSV Template
+      </button>
+    </div>
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+      <div class="drop-icon"><svg viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M12,19L8,15H11V11H13V15H16L12,19Z"/></svg></div>
+      <h3>Drop Excel files here or click to upload</h3>
+      <p>Each worksheet tab = one Sprint. Sheet name = Sprint ID.</p>
+      <div class="required-cols">
+        <span class="col-pill">Tower</span><span class="col-pill">ACT/PCT/Project</span>
+        <span class="col-pill">#US/Defects</span><span class="col-pill">#US/Defects SP</span>
+        <span class="col-pill">#GenAI SubTask</span><span class="col-pill">#GenAI Saved Hours</span>
+        <span class="col-pill">#GenAI Saved SP</span>
+      </div>
+    </div>
+    <div class="file-chips" id="fileChips"></div>
+  </div>
+</section>
+
+<!-- Dashboard Page -->
+<div id="dashPage" class="page">
+  <div class="dash-layout">
+    <aside class="sidebar">
+      <div class="sidebar-label">Sprints</div>
+      <div id="sidebarNav"></div>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-label" style="margin-top:6px;">Loaded Files</div>
+      <div id="sidebarFiles" style="font-size:10px;color:var(--txt3);padding:0 7px;line-height:1.9;"></div>
+    </aside>
+    <main class="main">
+      <div class="sec-heading">Overall Metrics</div>
+      <div class="kpi-strip stagger" id="kpiStrip"></div>
+
+      <div class="charts-grid-2">
+        <div class="chart-card fade-in" style="margin-bottom:0;">
+          <div class="chart-top-row">
+            <div><div class="chart-title">Productivity by sprint</div><div class="chart-subtitle">Σ(GenAI Saved SP) / Σ(US/Defects SP)</div></div>
+            <button class="icon-btn" onclick="downloadChart('chart1','productivity_by_sprint')"><svg viewBox="0 0 24 24"><path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/></svg>PNG</button>
+          </div>
+          <div class="chart-wrap" style="height:220px;"><canvas id="chart1" role="img" aria-label="Productivity ratio per sprint"></canvas></div>
+        </div>
+        <div class="chart-card fade-in" style="margin-bottom:0;">
+          <div class="chart-top-row">
+            <div><div class="chart-title">Tower-wise productivity</div><div class="chart-subtitle">All towers — selected sprint(s)</div></div>
+            <button class="icon-btn" onclick="downloadChart('chart3','tower_productivity')"><svg viewBox="0 0 24 24"><path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/></svg>PNG</button>
+          </div>
+          <div class="chart-wrap" id="chart3wrap" style="height:220px;"><canvas id="chart3" role="img" aria-label="Tower productivity"></canvas></div>
+        </div>
+      </div>
+
+      <div class="chart-card fade-in">
+        <div class="chart-top-row">
+          <div><div class="chart-title">Overall metrics comparison by sprint</div><div class="chart-subtitle">All columns across sprints — filter by tower &amp; project</div></div>
+          <div class="chart-actions">
+            <select id="towerFilter"><option value="ALL">All towers</option></select>
+            <select id="projectFilter"><option value="ALL">All projects</option></select>
+            <button class="icon-btn" onclick="downloadChart('chart2','overall_metrics')"><svg viewBox="0 0 24 24"><path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/></svg>PNG</button>
+            <button class="icon-btn" onclick="exportMetricsCSV()"><svg viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M10,19L6,15H9V11H11V15H14L10,19Z"/></svg>CSV</button>
+          </div>
+        </div>
+        <div id="legend2" class="legend-strip"></div>
+        <div class="chart-wrap" style="height:260px;"><canvas id="chart2" role="img" aria-label="All metrics by sprint"></canvas></div>
+      </div>
+
+      <!-- Sprint consolidated matrix -->
+      <div class="chart-card fade-in">
+        <div class="chart-top-row">
+          <div><div class="chart-title">Sprint consolidated values</div><div class="chart-subtitle">Towers as rows · sprints as column groups · click a tower to drill down to projects</div></div>
+          <div class="chart-actions">
+            <button class="icon-btn" onclick="downloadSprintTablePNG()"><svg viewBox="0 0 24 24"><path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/></svg>PNG</button>
+            <button class="icon-btn" onclick="exportSprintTableCSV()"><svg viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M10,19L6,15H9V11H11V15H14L10,19Z"/></svg>CSV</button>
+          </div>
+        </div>
+        <div class="data-table-wrap" id="sprintMatrixWrap"><p class="empty">No data</p></div>
+      </div>
+
+      <!-- Participated / Not Participated -->
+      <div class="filter-bar" style="margin-top:4px;">
+        <label>Filter:</label>
+        <select id="partTowerFilter"><option value="ALL">All towers</option></select>
+        <select id="partProjectFilter"><option value="ALL">All projects</option></select>
+      </div>
+      <div class="chart-card fade-in">
+        <div class="section-header">
+          <div><div class="chart-title">Participated ACT/PCT/Project</div><div class="chart-subtitle">GenAI Saved Hours &gt; 0 · click a tower row to drill to projects</div></div>
+          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+            <span class="section-count" id="partCount">0</span>
+            <button class="icon-btn" onclick="downloadParticipatedPNG()"><svg viewBox="0 0 24 24"><path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/></svg>PNG</button>
+            <button class="icon-btn" onclick="exportParticipatedExcel()"><svg viewBox="0 0 24 24"><path d="M21.17 3.25Q21.5 3.25 21.76 3.5 22 3.74 22 4.08V19.92Q22 20.26 21.76 20.5 21.5 20.75 21.17 20.75H7.83Q7.5 20.75 7.24 20.5 7 20.26 7 19.92V17H2.83Q2.5 17 2.24 16.76 2 16.5 2 16.17V7.83Q2 7.5 2.24 7.24 2.5 7 2.83 7H7V4.08Q7 3.74 7.24 3.5 7.5 3.25 7.83 3.25M7 13.06L8.18 15.28H9.97L8 12.06 9.97 8.84H8.18L7 11.06 6.2 9.56 5.86 8.84H4.07L6 12.06 4.07 15.28H5.86M13.88 19.25V17H8.25V19.25M13.88 15.5V12.63H12V15.5M13.88 11.13V8.25H12V11.13M13.88 6.75V4.75H8.25V6.75M20.75 19.25V17H15.13V19.25M20.75 15.5V12.63H15.13V15.5M20.75 11.13V8.25H15.13V11.13M20.75 6.75V4.75H15.13V6.75Z"/></svg>XLSX</button>
+          </div>
+        </div>
+        <div class="part-table-wrap">
+          <table class="part-table" id="participatedTable">
+            <thead><tr><th style="width:28px;">#</th><th>Tower / Project</th><th style="text-align:right;">#US/Defects</th><th style="text-align:right;">#Def SP</th><th style="text-align:right;">#SubTask</th><th style="text-align:right;">#Saved Hrs</th><th style="text-align:right;">#Saved SP</th><th style="text-align:right;">Productivity%</th></tr></thead>
+            <tbody id="participatedBody"><tr><td colspan="8" class="empty">No data</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-card fade-in" style="margin-bottom:0;">
+        <div class="section-header">
+          <div><div class="chart-title">Not Participated ACT/PCT/Project <span class="not-part-label" id="notPartLabel"></span></div><div class="chart-subtitle">Projects with no GenAI Saved Hours</div></div>
+          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+            <span class="section-count" id="notPartCount">0</span>
+            <button class="icon-btn" onclick="exportNotParticipatedCSV()"><svg viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M10,19L6,15H9V11H11V15H14L10,19Z"/></svg>CSV</button>
+            <button class="icon-btn" onclick="exportNotParticipatedExcel()"><svg viewBox="0 0 24 24"><path d="M21.17 3.25Q21.5 3.25 21.76 3.5 22 3.74 22 4.08V19.92Q22 20.26 21.76 20.5 21.5 20.75 21.17 20.75H7.83Q7.5 20.75 7.24 20.5 7 20.26 7 19.92V17H2.83Q2.5 17 2.24 16.76 2 16.5 2 16.17V7.83Q2 7.5 2.24 7.24 2.5 7 2.83 7H7V4.08Q7 3.74 7.24 3.5 7.5 3.25 7.83 3.25M7 13.06L8.18 15.28H9.97L8 12.06 9.97 8.84H8.18L7 11.06 6.2 9.56 5.86 8.84H4.07L6 12.06 4.07 15.28H5.86M13.88 19.25V17H8.25V19.25M13.88 15.5V12.63H12V15.5M13.88 11.13V8.25H12V11.13M13.88 6.75V4.75H8.25V6.75M20.75 19.25V17H15.13V19.25M20.75 15.5V12.63H15.13V15.5M20.75 11.13V8.25H15.13V11.13M20.75 6.75V4.75H15.13V6.75Z"/></svg>XLSX</button>
+          </div>
+        </div>
+        <div class="part-table-wrap">
+          <table class="part-table"><thead><tr><th style="width:28px;">#</th><th>Tower</th><th>ACT/PCT/Project</th><th style="text-align:right;">US/Defects</th><th style="text-align:right;">Defects SP</th></tr></thead>
+          <tbody id="notParticipatedBody"><tr><td colspan="5" class="empty">No data</td></tr></tbody></table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- GenAI Adoption Page -->
+<div id="adoptionPage" class="page">
+  <div class="dash-layout">
+    <aside class="sidebar">
+      <div class="sidebar-label">Sprints</div>
+      <div id="adoptSidebarNav"></div>
+    </aside>
+    <main class="main">
+      <div class="chart-card fade-in">
+        <div class="chart-top-row">
+          <div><div class="chart-title">GenAI SubTask Adoption by Tower</div><div class="chart-subtitle">Adoption % = (#GenAI SubTask / #US/Defects) × 100 · click tower to drill into projects</div></div>
+          <div class="chart-actions">
+            <button class="icon-btn" onclick="exportAdoptionCSV()"><svg viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M10,19L6,15H9V11H11V15H14L10,19Z"/></svg>CSV</button>
+          </div>
+        </div>
+        <div class="data-table-wrap">
+          <table class="adoption-table" id="adoptionTable">
+            <thead><tr>
+              <th>Tower / Project</th>
+              <th style="text-align:right;">#US/Defects</th>
+              <th style="text-align:right;">#GenAI SubTask</th>
+              <th style="text-align:right;">Adoption %</th>
+              <th style="min-width:120px;">Visual</th>
+            </tr></thead>
+            <tbody id="adoptionBody"><tr><td colspan="5" class="empty">No data</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Adoption trend chart -->
+      <div class="chart-card fade-in" style="margin-bottom:0;">
+        <div class="chart-top-row">
+          <div><div class="chart-title">Adoption trend by sprint</div><div class="chart-subtitle">GenAI SubTask adoption % per tower per sprint</div></div>
+          <div class="chart-actions">
+            <select id="adoptTowerFilter"><option value="ALL">All towers</option></select>
+            <button class="icon-btn" onclick="downloadChart('chartAdopt','adoption_trend')"><svg viewBox="0 0 24 24"><path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/></svg>PNG</button>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:260px;"><canvas id="chartAdopt" role="img" aria-label="Adoption trend"></canvas></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- AI Insights Page -->
+<div id="aiPage" class="page">
+  <div style="padding:1.5rem;">
+    <div class="ai-layout">
+      <div class="ai-panel">
+        <div class="sec-heading" style="margin-bottom:.8rem;">AI Inference Settings</div>
+        <div class="ai-controls">
+          <div>
+            <div class="ai-scope-label">Scope</div>
+            <select id="aiScopeType" style="width:100%;" onchange="updateAiScope()">
+              <option value="overall">Overall (all towers)</option>
+              <option value="tower">By Tower</option>
+              <option value="project">By ACT/PCT/Project</option>
+            </select>
+          </div>
+          <div id="aiScopeItemWrap" style="display:none;">
+            <div class="ai-scope-label" id="aiScopeItemLabel">Tower</div>
+            <select id="aiScopeItem" style="width:100%;"></select>
+          </div>
+          <div>
+            <div class="ai-scope-label">Sprint focus</div>
+            <select id="aiSprintScope" style="width:100%;">
+              <option value="ALL">All sprints</option>
+            </select>
+          </div>
+          <div style="background:var(--bg3);border-radius:8px;padding:10px;font-size:11px;color:var(--txt3);line-height:1.6;">
+            AI will analyse productivity trends, GenAI adoption rates, hours saved, and recommend actions based on your data.
+          </div>
+          <button class="ai-run-btn" id="aiRunBtn" onclick="runAiInference()">
+            <svg viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M11,8H13V12.41L15.29,14.71L13.88,16.12L11,13.24V8Z"/></svg>
+            Run AI Analysis
+          </button>
+        </div>
+      </div>
+      <div class="ai-result">
+        <div class="ai-result-inner" id="aiResultPanel">
+          <div class="ai-empty">Select a scope and click "Run AI Analysis" to get AI-powered insights about your sprint data.</div>
+        </div>
+        <div class="chart-card fade-in" style="margin-top:14px;" id="aiTrendCard" style="display:none;">
+          <div class="chart-top-row">
+            <div><div class="chart-title">Productivity trend</div><div class="chart-subtitle">Sprint-over-sprint for selected scope</div></div>
+          </div>
+          <div class="chart-wrap" style="height:220px;"><canvas id="chartAiTrend" role="img" aria-label="AI scope trend"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+// CONSTANTS & STATE
+// ═══════════════════════════════════════════════
+const REQUIRED=['Tower','ACT/PCT/Project','#US/Defects','#US/Defects SP','#GenAI SubTask','#GenAI Saved Hours','#GenAI Saved SP'];
+const COLORS=['#39D98A','#58A6FF','#F0883E','#FF7EB6','#BC8CFF','#E3B341','#F85149','#3BC9DB','#63E6BE','#74C0FC'];
+const METRICS=[
+  {key:'#US/Defects',   label:'US/Def',  cls:'cv-usd',thCls:'th-metric-usd'},
+  {key:'#US/Defects SP',label:'Def SP',  cls:'cv-usp',thCls:'th-metric-usp'},
+  {key:'#GenAI SubTask',label:'SubTask', cls:'cv-sub',thCls:'th-metric-sub'},
+  {key:'#GenAI Saved Hours',label:'Hrs', cls:'cv-hrs',thCls:'th-metric-hrs'},
+  {key:'#GenAI Saved SP',label:'SavedSP',cls:'cv-ssp',thCls:'th-metric-ssp'},
+  {key:'__prod__',      label:'Prod%',   cls:'cv-pct',thCls:'th-metric-pct'},
+];
+
+let sprintData={};
+let activeSprint='ALL';
+let activePage='dashboard';
+let adoptActiveSprint='ALL';
+let charts={c1:null,c2:null,c3:null,cAdopt:null,cAiTrend:null};
+let loadedFiles=[];
+let lastParticipated=[];
+let lastNotParticipated=[];
+let lastSprintTableRows=null;
+let lastAdoptionData=[];
+
+// ═══════════════════════════════════════════════
+// DATA-LABEL PLUGIN
+// ═══════════════════════════════════════════════
+Chart.register({id:'dataLabels',afterDatasetsDraw(chart){
+  const ctx=chart.ctx;
+  chart.data.datasets.forEach((ds,di)=>{
+    const meta=chart.getDatasetMeta(di);
+    if(meta.hidden) return;
+    meta.data.forEach((bar,i)=>{
+      const val=ds.data[i];
+      if(!val) return;
+      const isHoriz=chart.options.indexAxis==='y';
+      const label=typeof val==='number'&&val%1!==0?val.toFixed(1):String(val);
+      ctx.save();ctx.font='500 9px Outfit,sans-serif';ctx.fillStyle='#E6EDF3';ctx.textBaseline='middle';
+      if(isHoriz){ctx.textAlign='left';ctx.fillText(label+'%',Math.min(bar.x+7,chart.chartArea.right-28),bar.y);}
+      else{ctx.textAlign='center';ctx.fillText(label,bar.x,bar.y-8);}
+      ctx.restore();
+    });
+  });
+}});
+
+// ═══════════════════════════════════════════════
+// FILE HANDLING
+// ═══════════════════════════════════════════════
+document.getElementById('fileInput').addEventListener('change',e=>{processFiles(e.target.files);e.target.value='';});
+document.getElementById('dropZone').addEventListener('dragover',e=>{e.preventDefault();document.getElementById('dropZone').classList.add('drag');});
+document.getElementById('dropZone').addEventListener('dragleave',()=>document.getElementById('dropZone').classList.remove('drag'));
+document.getElementById('dropZone').addEventListener('drop',e=>{e.preventDefault();document.getElementById('dropZone').classList.remove('drag');processFiles(e.dataTransfer.files);});
+document.getElementById('towerFilter').addEventListener('change',()=>{updateProjectDropdown('projectFilter',document.getElementById('towerFilter').value);renderChart2();renderChart3();renderParticipated();});
+document.getElementById('projectFilter').addEventListener('change',()=>{renderChart2();renderChart3();renderParticipated();});
+document.getElementById('partTowerFilter').addEventListener('change',()=>{updateProjectDropdown('partProjectFilter',document.getElementById('partTowerFilter').value);renderParticipated();});
+document.getElementById('partProjectFilter').addEventListener('change',()=>renderParticipated());
+document.getElementById('adoptTowerFilter').addEventListener('change',renderAdoptionTrend);
+
+async function processFiles(files){
+  for(const f of Array.from(files)){
+    if(loadedFiles.includes(f.name)){showToast('Already loaded: '+f.name,'error');continue;}
+    const reader=new FileReader();
+    await new Promise(res=>{
+      reader.onload=async ev=>{
+        try{
+          const wb=XLSX.read(ev.target.result,{type:'binary'});
+          let loaded=0;
+          for(const sn of wb.SheetNames){
+            const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{defval:0});
+            if(!rows.length) continue;
+            const missing=REQUIRED.filter(c=>!Object.keys(rows[0]).includes(c));
+            if(missing.length){showToast(`Sheet "${sn}": missing ${missing.join(', ')}`,'error');continue;}
+            sprintData[sn]=(sprintData[sn]||[]).concat(rows);
+            loaded++;
+          }
+          if(loaded>0){
+            loadedFiles.push(f.name);
+            addFileChip(f.name);
+            showToast(`✓ Loaded ${loaded} sprint(s) from ${f.name}`,'success');
+            renderDashboard();
+          }
+        }catch(err){showToast('Error reading '+f.name,'error');}
+        res();
+      };
+      reader.readAsBinaryString(f);
+    });
+  }
+}
+
+function addFileChip(name){
+  const chips=document.getElementById('fileChips');
+  const d=document.createElement('div');d.className='file-chip';d.id='fc_'+name.replace(/\W/g,'_');
+  d.innerHTML=`<span class="dot"></span>${name}<button onclick="removeFile('${name}')">×</button>`;
+  chips.appendChild(d);
+}
+function removeFile(name){
+  document.getElementById('fc_'+name.replace(/\W/g,'_'))?.remove();
+  loadedFiles=loadedFiles.filter(f=>f!==name);
+  renderDashboard();
+}
+function resetAll(){
+  sprintData={};loadedFiles=[];activeSprint='ALL';
+  lastParticipated=[];lastNotParticipated=[];lastSprintTableRows=null;lastAdoptionData=[];
+  document.getElementById('fileChips').innerHTML='';
+  Object.keys(charts).forEach(k=>{if(charts[k]){charts[k].destroy();charts[k]=null;}});
+  document.getElementById('topNav').style.display='none';
+  document.getElementById('sprintBadge').style.display='none';
+  document.getElementById('resetBtn').style.display='none';
+  showPage('heroPage','hero');
+  showToast('Reset complete','success');
+}
+
+// ═══════════════════════════════════════════════
+// PAGE NAVIGATION
+// ═══════════════════════════════════════════════
+function showPage(pageId,name){
+  activePage=name;
+  document.querySelectorAll('.page,#heroPage').forEach(p=>{p.classList.remove('active');p.style.display='';});
+  const el=document.getElementById(pageId);
+  if(pageId==='heroPage'){el.style.display='flex';el.classList.add('active');}
+  else{el.style.display='block';el.classList.add('active');}
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  if(name==='dashboard') document.querySelector('.nav-btn:nth-child(1)').classList.add('active');
+  else if(name==='adoption') document.querySelector('.nav-btn:nth-child(2)').classList.add('active');
+  else if(name==='ai') document.querySelector('.nav-btn:nth-child(3)').classList.add('active');
+  // Defer rendering so the page is visible before Chart.js reads canvas dimensions
+  if(name==='dashboard'){
+    requestAnimationFrame(()=>{renderChart1();renderChart2();renderChart3();});
+  }
+  if(name==='adoption'){requestAnimationFrame(()=>{renderAdoptionTable();renderAdoptionTrend();});}
+  if(name==='ai'){updateAiScope();populateAiSprintScope();}
+}
+
+// ═══════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════
+function getSprints(){return Object.keys(sprintData).sort();}
+function getAllTowers(){return[...new Set(Object.values(sprintData).flat().map(r=>r['Tower']).filter(Boolean))].sort();}
+function getAllProjects(tower){
+  let rows=Object.values(sprintData).flat();
+  if(tower&&tower!=='ALL') rows=rows.filter(r=>r['Tower']===tower);
+  return[...new Set(rows.map(r=>r['ACT/PCT/Project']).filter(Boolean))].sort();
+}
+function getRows(sprint,tower,project){
+  let rows=sprint==='ALL'?Object.values(sprintData).flat():(sprintData[sprint]||[]);
+  if(tower&&tower!=='ALL') rows=rows.filter(r=>r['Tower']===tower);
+  if(project&&project!=='ALL') rows=rows.filter(r=>r['ACT/PCT/Project']===project);
+  return rows;
+}
+function sumC(rows,col){return rows.reduce((a,r)=>a+(parseFloat(r[col])||0),0);}
+function prod(rows){const d=sumC(rows,'#US/Defects SP');return d>0?sumC(rows,'#GenAI Saved SP')/d:0;}
+function fmtV(key,v){
+  if(key==='__prod__') return v.pct.toFixed(2)+'%';
+  if(key==='#US/Defects') return Math.round(v.usd).toLocaleString();
+  if(key==='#US/Defects SP') return Math.round(v.usp).toLocaleString();
+  if(key==='#GenAI SubTask') return Math.round(v.sub).toLocaleString();
+  if(key==='#GenAI Saved Hours') return v.hrs.toFixed(1);
+  if(key==='#GenAI Saved SP') return v.ssp.toFixed(1);
+  return '';
+}
+function calcV(rows){
+  const usd=sumC(rows,'#US/Defects'),usp=sumC(rows,'#US/Defects SP'),
+        sub=sumC(rows,'#GenAI SubTask'),hrs=sumC(rows,'#GenAI Saved Hours'),
+        ssp=sumC(rows,'#GenAI Saved SP');
+  return{usd,usp,sub,hrs,ssp,pct:usp>0?ssp/usp*100:0};
+}
+
+// ═══════════════════════════════════════════════
+// MASTER RENDER
+// ═══════════════════════════════════════════════
+function renderDashboard(){
+  const sprints=getSprints();
+  if(!sprints.length) return;
+
+  // Show top nav and badges
+  document.getElementById('heroPage').style.display='none';
+  document.getElementById('heroPage').classList.remove('active');
+  document.getElementById('topNav').style.display='flex';
+  document.getElementById('resetBtn').style.display='flex';
+  const badge=document.getElementById('sprintBadge');
+  badge.style.display='block';
+  badge.textContent=sprints.length+' sprint'+(sprints.length>1?'s':'');
+
+  // Make dashPage visible BEFORE rendering charts so canvas has non-zero dimensions
+  activePage='dashboard';
+  document.querySelectorAll('.page,#heroPage').forEach(p=>{p.classList.remove('active');p.style.display='';});
+  const dp=document.getElementById('dashPage');
+  dp.style.display='block';
+  dp.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const nb=document.querySelector('.nav-btn:nth-child(1)');
+  if(nb) nb.classList.add('active');
+
+  // Render non-chart content immediately
+  updateAllFilters();
+  renderSidebar(sprints);
+  renderKPIs();
+  renderSprintTable();
+  renderParticipated();
+  renderAdoptionSidebar(sprints);
+  populateAiSprintScope();
+
+  // Defer chart rendering until after the browser has laid out the visible page
+  requestAnimationFrame(()=>{
+    renderChart1();
+    renderChart2();
+    renderChart3();
+  });
+}
+
+function updateAllFilters(){
+  ['towerFilter','partTowerFilter','adoptTowerFilter'].forEach(id=>{
+    const s=document.getElementById(id);
+    if(!s) return;
+    const p=s.value;
+    s.innerHTML='<option value="ALL">All towers</option>';
+    getAllTowers().forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;s.appendChild(o);});
+    if(getAllTowers().includes(p)) s.value=p;
+  });
+  // Always reset chart-area filters to ALL so charts default to showing all towers/projects
+  document.getElementById('towerFilter').value='ALL';
+  document.getElementById('projectFilter').value='ALL';
+  updateProjectDropdown('projectFilter','ALL');
+  updateProjectDropdown('partProjectFilter',document.getElementById('partTowerFilter').value);
+}
+function updateProjectDropdown(id,tower){
+  const sel=document.getElementById(id);if(!sel) return;
+  const prev=sel.value;
+  sel.innerHTML='<option value="ALL">All projects</option>';
+  getAllProjects(tower).forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p.length>32?p.slice(0,30)+'…':p;sel.appendChild(o);});
+  if(getAllProjects(tower).includes(prev)) sel.value=prev;
+}
+
+// ═══════════════════════════════════════════════
+// SIDEBAR
+// ═══════════════════════════════════════════════
+function renderSidebar(sprints){
+  const nav=document.getElementById('sidebarNav');
+  nav.innerHTML='';
+  const ap=sprints.reduce((a,s)=>a+prod(getRows(s,'ALL'))*100,0)/sprints.length;
+  addSprintBtn(nav,'ALL','All Sprints',ap,()=>{activeSprint='ALL';renderDashboard();});
+  sprints.forEach(s=>addSprintBtn(nav,s,s,prod(getRows(s,'ALL'))*100,()=>{activeSprint=s;renderDashboard();}));
+  document.getElementById('sidebarFiles').innerHTML=loadedFiles.map(f=>`<div>📄 ${f.length>22?f.slice(0,20)+'…':f}</div>`).join('');
+}
+function renderAdoptionSidebar(sprints){
+  const nav=document.getElementById('adoptSidebarNav');
+  nav.innerHTML='';
+  addSprintBtn(nav,'ALL','All Sprints',0,()=>{adoptActiveSprint='ALL';renderAdoptionTable();renderAdoptionTrend();},true);
+  sprints.forEach(s=>addSprintBtn(nav,s,s,0,()=>{adoptActiveSprint=s;renderAdoptionTable();renderAdoptionTrend();},true));
+}
+function addSprintBtn(nav,key,label,pctVal,cb,noPct=false){
+  const b=document.createElement('button');
+  b.className='sprint-btn'+((key===activeSprint||key===adoptActiveSprint)?' active':'');
+  b.innerHTML=`<span class="sprint-dot"></span>${label}${!noPct?`<span class="sprint-prod">${pctVal.toFixed(1)}%</span>`:''}`;
+  b.onclick=cb;nav.appendChild(b);
+}
+
+// ═══════════════════════════════════════════════
+// KPIs
+// ═══════════════════════════════════════════════
+function renderKPIs(){
+  const rows=getRows(activeSprint,'ALL');
+  const sprints=getSprints();
+  const p=prod(rows);
+  let delta=null;
+  if(activeSprint!=='ALL'){
+    const idx=sprints.indexOf(activeSprint);
+    if(idx>0){const pp=prod(getRows(sprints[idx-1],'ALL'));delta=pp>0?(p-pp)/pp*100:null;}
+  }
+  const kpis=[
+    {label:'Productivity ratio',value:(p*100).toFixed(1)+'%',sub:'Saved SP / Total SP',delta,color:'var(--accent)'},
+    {label:'US / Defects',value:Math.round(sumC(rows,'#US/Defects')).toLocaleString(),sub:'stories & defects',color:'var(--blue)'},
+    {label:'Story points',value:Math.round(sumC(rows,'#US/Defects SP')).toLocaleString(),sub:'total SP',color:'var(--purple)'},
+    {label:'GenAI subtasks',value:Math.round(sumC(rows,'#GenAI SubTask')).toLocaleString(),sub:'created',color:'var(--orange)'},
+    {label:'Hours saved',value:Math.round(sumC(rows,'#GenAI Saved Hours')).toLocaleString(),sub:'by GenAI',color:'var(--yellow)'},
+    {label:'SP saved',value:Math.round(sumC(rows,'#GenAI Saved SP')).toLocaleString(),sub:'story points',color:'var(--pink)'},
+  ];
+  document.getElementById('kpiStrip').innerHTML=kpis.map(k=>`
+    <div class="kpi-card" style="--kpi-color:${k.color}">
+      <div class="kpi-label">${k.label}</div><div class="kpi-value">${k.value}</div><div class="kpi-sub">${k.sub}</div>
+      ${k.delta!==null?`<div class="kpi-delta ${k.delta>=0?'up':'down'}">${k.delta>=0?'↑':'↓'} ${Math.abs(k.delta).toFixed(1)}% vs prev</div>`:''}
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════════════
+const CHART_OPTS={backgroundColor:'#161B22',borderColor:'#30363D',borderWidth:1,titleColor:'#E6EDF3',bodyColor:'#8B949E'};
+function renderChart1(){
+  const sprints=getSprints();
+  const data=sprints.map(s=>parseFloat((prod(getRows(s,'ALL'))*100).toFixed(2)));
+  const mx=Math.max(...data,1);
+  if(charts.c1) charts.c1.destroy();
+  charts.c1=new Chart(document.getElementById('chart1'),{type:'bar',
+    data:{labels:sprints,datasets:[{label:'Productivity %',data,backgroundColor:sprints.map((_,i)=>COLORS[i%COLORS.length]),borderRadius:5,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:20}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:v=>v.raw+'%'},...CHART_OPTS}},
+      scales:{y:{beginAtZero:true,max:Math.ceil(mx*1.3),ticks:{callback:v=>v+'%',color:'#6E7681',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'},border:{color:'transparent'}},
+              x:{ticks:{color:'#8B949E',font:{size:10}},grid:{display:false},border:{color:'transparent'}}}}});
+}
+function renderChart2(){
+  const tower=document.getElementById('towerFilter').value;
+  const project=document.getElementById('projectFilter').value;
+  const sprints=getSprints();
+  const cols=['#US/Defects','#US/Defects SP','#GenAI SubTask','#GenAI Saved Hours','#GenAI Saved SP'];
+  const cc=[COLORS[0],COLORS[1],COLORS[2],COLORS[3],COLORS[4]];
+  const datasets=cols.map((col,i)=>({label:col,data:sprints.map(s=>parseFloat(sumC(getRows(s,tower,project),col).toFixed(1))),backgroundColor:cc[i],borderRadius:3,borderSkipped:false}));
+  const mx=Math.max(...datasets.flatMap(d=>d.data),1);
+  document.getElementById('legend2').innerHTML=cols.map((c,i)=>`<div class="legend-item"><div class="legend-swatch" style="background:${cc[i]}"></div>${c}</div>`).join('');
+  if(charts.c2) charts.c2.destroy();
+  charts.c2=new Chart(document.getElementById('chart2'),{type:'bar',data:{labels:sprints,datasets},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:20}},
+      plugins:{legend:{display:false},tooltip:{...CHART_OPTS}},
+      scales:{x:{ticks:{color:'#8B949E',font:{size:10}},grid:{display:false},border:{color:'transparent'}},
+              y:{max:Math.ceil(mx*1.2),ticks:{color:'#6E7681',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'},border:{color:'transparent'}}}}});
+}
+function renderChart3(){
+  // Always show ALL towers regardless of filter
+  const sprints=activeSprint==='ALL'?getSprints():[activeSprint];
+  const towers=getAllTowers(); // always all towers
+  const datasets=sprints.map((s,i)=>({
+    label:s,
+    data:towers.map(t=>parseFloat((prod(getRows(s,t))*100).toFixed(2))),
+    backgroundColor:COLORS[i%COLORS.length],borderRadius:3,borderSkipped:false
+  }));
+  const mx=Math.max(...datasets.flatMap(d=>d.data),1);
+  const h=Math.max(220,towers.length*46+80);
+  document.getElementById('chart3wrap').style.height=h+'px';
+  if(charts.c3) charts.c3.destroy();
+  charts.c3=new Chart(document.getElementById('chart3'),{type:'bar',data:{labels:towers,datasets},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',layout:{padding:{right:50}},
+      plugins:{legend:{display:sprints.length>1,labels:{color:'#8B949E',boxWidth:9,font:{size:10}}},
+               tooltip:{callbacks:{label:v=>v.raw+'%'},...CHART_OPTS}},
+      scales:{x:{beginAtZero:true,max:Math.ceil(mx*1.35),ticks:{callback:v=>v+'%',color:'#6E7681',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'},border:{color:'transparent'}},
+              y:{ticks:{color:'#8B949E',font:{size:10}},grid:{display:false},border:{color:'transparent'}}}}});
+}
+
+// ═══════════════════════════════════════════════
+// SPRINT MATRIX — with drill-down
+// ═══════════════════════════════════════════════
+function renderSprintTable(){
+  const sprints=getSprints();
+  const towers=getAllTowers();
+  const nM=METRICS.length;
+  const pivot={};
+  towers.forEach(t=>{pivot[t]={};sprints.forEach(s=>{pivot[t][s]=calcV(getRows(s,t));});});
+  const sprintTotals={};
+  sprints.forEach(s=>{
+    sprintTotals[s]={usd:0,usp:0,sub:0,hrs:0,ssp:0};
+    towers.forEach(t=>{const v=pivot[t][s];sprintTotals[s].usd+=v.usd;sprintTotals[s].usp+=v.usp;sprintTotals[s].sub+=v.sub;sprintTotals[s].hrs+=v.hrs;sprintTotals[s].ssp+=v.ssp;});
+    sprintTotals[s].pct=sprintTotals[s].usp>0?sprintTotals[s].ssp/sprintTotals[s].usp*100:0;
+  });
+
+  // Also build project-level pivot for drill-down
+  const projPivot={};
+  towers.forEach(t=>{
+    projPivot[t]={};
+    getAllProjects(t).forEach(pr=>{projPivot[t][pr]={};sprints.forEach(s=>{projPivot[t][pr][s]=calcV(getRows(s,t,pr));});});
+  });
+
+  lastSprintTableRows={pivot,sprints,towers,sprintTotals,METRICS,projPivot};
+
+  let thead1='<tr><th class="th-tower" rowspan="2">Tower / Project</th>';
+  let thead2='<tr>';
+  sprints.forEach((s,si)=>{
+    const sep=si<sprints.length-1?'border-right:2px solid var(--border2);':'';
+    thead1+=`<th class="th-sprint" colspan="${nM}" style="${sep}">${s}</th>`;
+    METRICS.forEach((m,mi)=>{
+      const isLast=mi===nM-1&&si<sprints.length-1;
+      thead2+=`<th class="th-metric ${m.thCls}" style="${isLast?'border-right:2px solid var(--border2);':''}">${m.label}</th>`;
+    });
+  });
+  thead1+='</tr>';thead2+='</tr>';
+
+  let tbody='';
+  towers.forEach((t,ti)=>{
+    const rowId='mrow_'+ti;
+    // Tower row — clickable to expand projects
+    let tRow=`<tr><td class="td-tower-name" onclick="toggleMatrixDrill('${rowId}',this)" style="cursor:pointer;"><span class="expand-icon">▶</span><strong>${t}</strong></td>`;
+    sprints.forEach((s,si)=>{
+      const v=pivot[t][s];
+      METRICS.forEach((m,mi)=>{
+        const isLast=mi===nM-1&&si<sprints.length-1;
+        tRow+=`<td class="td-val ${m.cls}" style="${isLast?'border-right:2px solid var(--border2);':''}">${fmtV(m.key,v)}</td>`;
+      });
+    });
+    tRow+='</tr>';
+    tbody+=tRow;
+    // Drill-down project rows
+    const projs=getAllProjects(t);
+    projs.forEach((pr)=>{
+      let dRow=`<tr class="drill-row" data-group="${rowId}">`;
+      dRow+=`<td class="td-tower-name" style="padding-left:26px;font-size:10px;color:var(--txt2);font-weight:400;background:var(--bg3);cursor:default;">↳ ${pr}</td>`;
+      sprints.forEach((s,si)=>{
+        const v=projPivot[t][pr][s];
+        METRICS.forEach((m,mi)=>{
+          const isLast=mi===nM-1&&si<sprints.length-1;
+          dRow+=`<td class="td-val ${m.cls}" style="font-size:10px;background:var(--bg3);${isLast?'border-right:2px solid var(--border2);':''}">${fmtV(m.key,v)}</td>`;
+        });
+      });
+      dRow+='</tr>';
+      tbody+=dRow;
+    });
+  });
+
+  // Grand total
+  let totRow='<tr class="total-row"><td class="td-tower-name">Grand Total</td>';
+  sprints.forEach((s,si)=>{
+    const v=sprintTotals[s];
+    METRICS.forEach((m,mi)=>{
+      const isLast=mi===nM-1&&si<sprints.length-1;
+      totRow+=`<td class="td-val ${m.cls}" style="font-weight:700;${isLast?'border-right:2px solid var(--border2);':''}">${fmtV(m.key,v)}</td>`;
+    });
+  });
+  totRow+='</tr>';
+
+  document.getElementById('sprintMatrixWrap').innerHTML=`<table class="matrix-table"><thead>${thead1}${thead2}</thead><tbody>${tbody}${totRow}</tbody></table>`;
+}
+function toggleMatrixDrill(groupId,tdEl){
+  const rows=document.querySelectorAll(`tr[data-group="${groupId}"]`);
+  const isOpen=rows.length&&rows[0].classList.contains('visible');
+  rows.forEach(r=>r.classList.toggle('visible',!isOpen));
+  const icon=tdEl.querySelector('.expand-icon');
+  if(icon) icon.style.transform=isOpen?'rotate(0deg)':'rotate(90deg)';
+}
+
+// ═══════════════════════════════════════════════
+// PARTICIPATED — grouped by tower with drill-down
+// ═══════════════════════════════════════════════
+function renderParticipated(){
+  const tower=document.getElementById('partTowerFilter').value;
+  const project=document.getElementById('partProjectFilter').value;
+  const rows=getRows(activeSprint,tower,project);
+  const byTower={};
+  rows.forEach(r=>{
+    const t=r['Tower'];const pr=r['ACT/PCT/Project'];
+    if(!byTower[t]) byTower[t]={tower:t,usd:0,usp:0,sub:0,hours:0,sp:0,pct:0,projects:{}};
+    if(!byTower[t].projects[pr]) byTower[t].projects[pr]={proj:pr,usd:0,usp:0,sub:0,hours:0,sp:0,pct:0};
+    const vals=[['usd','#US/Defects'],['usp','#US/Defects SP'],['sub','#GenAI SubTask'],['hours','#GenAI Saved Hours'],['sp','#GenAI Saved SP']];
+    vals.forEach(([k,c])=>{byTower[t][k]+=(parseFloat(r[c])||0);byTower[t].projects[pr][k]+=(parseFloat(r[c])||0);});
+  });
+  Object.values(byTower).forEach(t=>{
+    t.pct=t.usp>0?t.sp/t.usp*100:0;
+    Object.values(t.projects).forEach(p=>{p.pct=p.usp>0?p.sp/p.usp*100:0;});
+  });
+
+  const partTowers=Object.values(byTower).filter(t=>t.hours>0).sort((a,b)=>b.hours-a.hours);
+  const notPartTowers=Object.values(byTower).filter(t=>t.hours===0);
+
+  // For "not participated" table — project level
+  const notPartProjs=[];
+  rows.forEach(r=>{
+    const key=r['Tower']+'||'+r['ACT/PCT/Project'];
+    if(!notPartProjs.find(x=>x.key===key)&&!(parseFloat(r['#GenAI Saved Hours'])||0)){
+      // check total hours for this tower+project
+    }
+  });
+  // Simplified not-participated: project level
+  const projMap={};
+  rows.forEach(r=>{
+    const k=r['Tower']+'||'+r['ACT/PCT/Project'];
+    if(!projMap[k]) projMap[k]={tower:r['Tower'],proj:r['ACT/PCT/Project'],hours:0,usd:0,usp:0};
+    projMap[k].hours+=(parseFloat(r['#GenAI Saved Hours'])||0);
+    projMap[k].usd+=(parseFloat(r['#US/Defects'])||0);
+    projMap[k].usp+=(parseFloat(r['#US/Defects SP'])||0);
+  });
+  lastParticipated=partTowers;
+  lastNotParticipated=Object.values(projMap).filter(p=>p.hours===0).sort((a,b)=>a.proj.localeCompare(b.proj));
+
+  document.getElementById('partCount').textContent=partTowers.length+' tower'+(partTowers.length!==1?'s':'');
+  document.getElementById('notPartCount').textContent=lastNotParticipated.length+' project'+(lastNotParticipated.length!==1?'s':'');
+  document.getElementById('notPartLabel').textContent='';
+
+  // Build participated body: grouped tower rows with drill-down projects
+  let html='';
+  partTowers.forEach((t,ti)=>{
+    const gid='ptg_'+ti;
+    const rc=ti===0?'top1':ti===1?'top2':ti===2?'top3':'';
+    html+=`<tr class="tower-row">
+      <td class="td-rank"><span class="rank-badge ${rc}">${ti+1}</span></td>
+      <td class="td-tower" onclick="togglePartDrill('${gid}',this)" style="cursor:pointer;"><span class="expand-icon">▶</span><strong>${t.tower}</strong></td>
+      <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--blue);">${Math.round(t.usd)}</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--purple);">${Math.round(t.usp)}</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--orange);">${Math.round(t.sub)}</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--accent);font-weight:500;">${t.hours.toFixed(1)}</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--blue);">${t.sp.toFixed(1)}</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--pink);font-weight:600;">${t.pct.toFixed(2)}%</td>
+    </tr>`;
+    Object.values(t.projects).filter(p=>p.hours>0).sort((a,b)=>b.hours-a.hours).forEach(p=>{
+      html+=`<tr class="drill-proj-row" data-pgroup="${gid}">
+        <td></td>
+        <td style="padding-left:22px;font-size:10px;color:var(--txt2);">↳ ${p.proj}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-size:10px;color:var(--blue);">${Math.round(p.usd)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-size:10px;color:var(--purple);">${Math.round(p.usp)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-size:10px;color:var(--orange);">${Math.round(p.sub)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);">${p.hours.toFixed(1)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-size:10px;color:var(--blue);">${p.sp.toFixed(1)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-size:10px;color:var(--pink);">${p.pct.toFixed(2)}%</td>
+      </tr>`;
+    });
+  });
+  if(!html) html='<tr><td colspan="8" class="empty">No participated projects</td></tr>';
+  document.getElementById('participatedBody').innerHTML=html;
+
+  document.getElementById('notParticipatedBody').innerHTML=lastNotParticipated.length
+    ?lastNotParticipated.map((it,i)=>`<tr><td class="td-rank"><span class="rank-badge">${i+1}</span></td><td class="td-tower">${it.tower}</td><td class="td-proj">${it.proj}</td><td style="text-align:right;font-family:'DM Mono',monospace;color:var(--orange);">${Math.round(it.usd)}</td><td style="text-align:right;font-family:'DM Mono',monospace;color:var(--purple);">${Math.round(it.usp)}</td></tr>`).join('')
+    :'<tr><td colspan="5" class="empty">🎉 All projects have participated!</td></tr>';
+}
+function togglePartDrill(gid,tdEl){
+  const rows=document.querySelectorAll(`tr[data-pgroup="${gid}"]`);
+  const isOpen=rows.length&&rows[0].classList.contains('visible');
+  rows.forEach(r=>r.classList.toggle('visible',!isOpen));
+  const icon=tdEl.querySelector('.expand-icon');if(icon) icon.style.transform=isOpen?'':'rotate(90deg)';
+}
+
+// ═══════════════════════════════════════════════
+// ADOPTION TABLE & TREND
+// ═══════════════════════════════════════════════
+function renderAdoptionTable(){
+  const sprints=adoptActiveSprint==='ALL'?getSprints():[adoptActiveSprint];
+  const towers=getAllTowers();
+  let tbody='';
+  lastAdoptionData=[];
+  towers.forEach((t,ti)=>{
+    const rows=getRows(adoptActiveSprint==='ALL'?'ALL':adoptActiveSprint,t);
+    const usd=sumC(rows,'#US/Defects');
+    const sub=sumC(rows,'#GenAI SubTask');
+    const pct=usd>0?(sub/usd*100):0;
+    lastAdoptionData.push({tower:t,usd,sub,pct});
+    const barColor=pct>=80?'#39D98A':pct>=50?'#E3B341':'#F85149';
+    const gid='adg_'+ti;
+    tbody+=`<tr onclick="toggleAdoptDrill('${gid}',this)" style="cursor:pointer;">
+      <td style="font-weight:500;color:var(--txt);"><span class="expand-icon" style="display:inline-block;margin-right:5px;font-size:9px;color:var(--txt3);transition:transform .2s;">▶</span>${t}</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--blue);">${Math.round(usd).toLocaleString()}</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace;color:var(--orange);">${Math.round(sub).toLocaleString()}</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace;color:${barColor};font-weight:600;">${pct.toFixed(1)}%</td>
+      <td><div class="adopt-pct-bar"><div class="adopt-pct-track"><div class="adopt-pct-fill" style="width:${Math.min(pct,100)}%;background:${barColor};"></div></div></div></td>
+    </tr>`;
+    // Drill-down: projects under this tower
+    getAllProjects(t).forEach(pr=>{
+      const pRows=getRows(adoptActiveSprint==='ALL'?'ALL':adoptActiveSprint,t,pr);
+      const pUsd=sumC(pRows,'#US/Defects');
+      const pSub=sumC(pRows,'#GenAI SubTask');
+      const pPct=pUsd>0?(pSub/pUsd*100):0;
+      const pBarColor=pPct>=80?'#39D98A':pPct>=50?'#E3B341':'#F85149';
+      tbody+=`<tr class="drill-row" data-adgroup="${gid}" style="display:none;">
+        <td style="padding-left:22px;font-size:10px;color:var(--txt2);">↳ ${pr}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-size:10px;color:var(--blue);">${Math.round(pUsd).toLocaleString()}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-size:10px;color:var(--orange);">${Math.round(pSub).toLocaleString()}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-size:10px;color:${pBarColor};font-weight:600;">${pPct.toFixed(1)}%</td>
+        <td><div class="adopt-pct-bar"><div class="adopt-pct-track"><div class="adopt-pct-fill" style="width:${Math.min(pPct,100)}%;background:${pBarColor};"></div></div></div></td>
+      </tr>`;
+    });
+  });
+  document.getElementById('adoptionBody').innerHTML=tbody||'<tr><td colspan="5" class="empty">No data</td></tr>';
+}
+function toggleAdoptDrill(gid,rowEl){
+  const drows=document.querySelectorAll(`tr[data-adgroup="${gid}"]`);
+  const isOpen=drows.length&&drows[0].style.display!=='none';
+  drows.forEach(r=>r.style.display=isOpen?'none':'table-row');
+  const icon=rowEl.querySelector('.expand-icon');
+  if(icon) icon.style.transform=isOpen?'':'rotate(90deg)';
+}
+function renderAdoptionTrend(){
+  const filterTower=document.getElementById('adoptTowerFilter').value;
+  const sprints=getSprints();
+  const towers=filterTower==='ALL'?getAllTowers():[filterTower];
+  const datasets=towers.slice(0,8).map((t,i)=>({
+    label:t,
+    data:sprints.map(s=>{
+      const rows=getRows(s,t);
+      const usd=sumC(rows,'#US/Defects');
+      const sub=sumC(rows,'#GenAI SubTask');
+      return usd>0?parseFloat((sub/usd*100).toFixed(2)):0;
+    }),
+    borderColor:COLORS[i%COLORS.length],backgroundColor:'transparent',
+    borderWidth:2,pointRadius:4,pointBackgroundColor:COLORS[i%COLORS.length],tension:0.35
+  }));
+  if(charts.cAdopt) charts.cAdopt.destroy();
+  charts.cAdopt=new Chart(document.getElementById('chartAdopt'),{type:'line',data:{labels:sprints,datasets},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:16}},
+      plugins:{legend:{display:towers.length>1,labels:{color:'#8B949E',boxWidth:9,font:{size:10}}},
+               tooltip:{callbacks:{label:v=>`${v.dataset.label}: ${v.raw}%`},...CHART_OPTS}},
+      scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%',color:'#6E7681',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'},border:{color:'transparent'}},
+              x:{ticks:{color:'#8B949E',font:{size:10}},grid:{display:false},border:{color:'transparent'}}}}});
+}
+
+// ═══════════════════════════════════════════════
+// AI INSIGHTS PAGE
+// ═══════════════════════════════════════════════
+function updateAiScope(){
+  const type=document.getElementById('aiScopeType').value;
+  const wrap=document.getElementById('aiScopeItemWrap');
+  const label=document.getElementById('aiScopeItemLabel');
+  const sel=document.getElementById('aiScopeItem');
+  if(type==='overall'){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  if(type==='tower'){
+    label.textContent='Tower';sel.innerHTML='';
+    getAllTowers().forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;sel.appendChild(o);});
+  } else {
+    label.textContent='Project';sel.innerHTML='';
+    getAllProjects('ALL').forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;sel.appendChild(o);});
+  }
+}
+function populateAiSprintScope(){
+  const sel=document.getElementById('aiSprintScope');
+  const prev=sel.value;
+  sel.innerHTML='<option value="ALL">All sprints</option>';
+  getSprints().forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
+  if(prev) sel.value=prev;
+}
+
+async function runAiInference(){
+  const panel=document.getElementById('aiResultPanel');
+  const btn=document.getElementById('aiRunBtn');
+  const type=document.getElementById('aiScopeType').value;
+  const sprint=document.getElementById('aiSprintScope').value;
+  const scopeItem=type!=='overall'?document.getElementById('aiScopeItem').value:'';
+  const sprints=sprint==='ALL'?getSprints():[sprint];
+
+  // Build data summary for the prompt
+  let summary='';
+  if(type==='overall'){
+    summary=sprints.map(s=>{
+      const rows=getRows(s,'ALL');
+      const usd=sumC(rows,'#US/Defects'),usp=sumC(rows,'#US/Defects SP'),sub=sumC(rows,'#GenAI SubTask');
+      const hrs=sumC(rows,'#GenAI Saved Hours'),ssp=sumC(rows,'#GenAI Saved SP');
+      const productivity=usp>0?(ssp/usp*100).toFixed(2):0;
+      const adoption=usd>0?(sub/usd*100).toFixed(2):0;
+      return `Sprint: ${s} | US/Defects: ${Math.round(usd)} | Defects SP: ${Math.round(usp)} | GenAI SubTasks: ${Math.round(sub)} | Hours Saved: ${hrs.toFixed(1)} | Saved SP: ${ssp.toFixed(1)} | Productivity: ${productivity}% | Adoption: ${adoption}%`;
+    }).join('\n');
+  } else {
+    const filterT=type==='tower'?scopeItem:'ALL';
+    const filterP=type==='project'?scopeItem:'ALL';
+    summary=sprints.map(s=>{
+      const rows=getRows(s,filterT,filterP);
+      const usd=sumC(rows,'#US/Defects'),usp=sumC(rows,'#US/Defects SP'),sub=sumC(rows,'#GenAI SubTask');
+      const hrs=sumC(rows,'#GenAI Saved Hours'),ssp=sumC(rows,'#GenAI Saved SP');
+      const productivity=usp>0?(ssp/usp*100).toFixed(2):0;
+      const adoption=usd>0?(sub/usd*100).toFixed(2):0;
+      return `Sprint: ${s} | US/Defects: ${Math.round(usd)} | Defects SP: ${Math.round(usp)} | GenAI SubTasks: ${Math.round(sub)} | Hours Saved: ${hrs.toFixed(1)} | Saved SP: ${ssp.toFixed(1)} | Productivity: ${productivity}% | Adoption: ${adoption}%`;
+    }).join('\n');
+  }
+
+  const scopeLabel=type==='overall'?'All Towers':type==='tower'?`Tower: ${scopeItem}`:`Project: ${scopeItem}`;
+
+  const prompt=`You are a GenAI sprint analytics expert. Analyse the following sprint data and provide structured insights.
+
+Scope: ${scopeLabel}
+Sprint range: ${sprint==='ALL'?'All sprints':sprint}
+
+Sprint Data:
+${summary}
+
+Provide a JSON response with this exact structure (no markdown, no backticks, just JSON):
+{
+  "summary": "2-3 sentence executive summary",
+  "goingWell": ["point 1", "point 2", "point 3"],
+  "goingWrong": ["point 1", "point 2"],
+  "trends": "1-2 sentence trend analysis",
+  "recommendations": ["action 1", "action 2", "action 3", "action 4"]
+}`;
+
+  panel.innerHTML='<div class="ai-loading"><svg viewBox="0 0 24 24"><path d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z"/></svg>Analysing sprint data with AI…</div>';
+  btn.disabled=true;
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data=await resp.json();
+    const text=data.content?.map(b=>b.text||'').join('').trim();
+    let parsed;
+    try{parsed=JSON.parse(text);}catch(e){
+      // Try extracting JSON
+      const match=text.match(/\{[\s\S]*\}/);
+      parsed=match?JSON.parse(match[0]):null;
+    }
+    if(!parsed) throw new Error('Could not parse AI response');
+    renderAiResult(parsed,scopeLabel);
+    renderAiTrendChart(type,scopeItem,sprints);
+  }catch(err){
+    panel.innerHTML=`<div style="padding:1.5rem;color:var(--red);font-size:13px;">Error: ${err.message}.<br><br>Make sure you have API access enabled.</div>`;
+  }
+  btn.disabled=false;
+}
+
+function renderAiResult(data,scopeLabel){
+  const panel=document.getElementById('aiResultPanel');
+  const wellChips=(data.goingWell||[]).map(w=>`<span class="ai-action-chip">✓ ${w}</span>`).join('');
+  const wrongChips=(data.goingWrong||[]).map(w=>`<span class="ai-warn-chip">⚠ ${w}</span>`).join('');
+  const recItems=(data.recommendations||[]).map((r,i)=>`<div style="display:flex;gap:8px;margin-bottom:6px;"><span style="color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;flex-shrink:0;">${i+1}.</span><span style="font-size:12px;color:var(--txt2);line-height:1.6;">${r}</span></div>`).join('');
+  panel.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:6px;">
+      <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:600;color:var(--txt);">AI Analysis — ${scopeLabel}</div>
+      <div style="font-size:10px;color:var(--txt3);background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:2px 8px;">Powered by Claude</div>
+    </div>
+    <div class="ai-section">
+      <div class="ai-section-title">Summary</div>
+      <div class="ai-text">${data.summary||''}</div>
+    </div>
+    <div class="ai-section">
+      <div class="ai-section-title">Going well</div>
+      <div>${wellChips||'<span style="color:var(--txt3);font-size:12px;">No highlights identified</span>'}</div>
+    </div>
+    <div class="ai-section">
+      <div class="ai-section-title">Areas of concern</div>
+      <div>${wrongChips||'<span style="color:var(--txt3);font-size:12px;">No concerns identified</span>'}</div>
+    </div>
+    <div class="ai-section">
+      <div class="ai-section-title">Trend analysis</div>
+      <div class="ai-text">${data.trends||''}</div>
+    </div>
+    <div class="ai-section">
+      <div class="ai-section-title">Recommended actions</div>
+      ${recItems||'<span style="color:var(--txt3);font-size:12px;">No recommendations</span>'}
+    </div>`;
+  document.getElementById('aiTrendCard').style.display='block';
+}
+
+function renderAiTrendChart(type,scopeItem,sprints){
+  const filterT=type==='tower'?scopeItem:'ALL';
+  const filterP=type==='project'?scopeItem:'ALL';
+  const prodData=sprints.map(s=>{
+    const rows=getRows(s,filterT,filterP);
+    return parseFloat((prod(rows)*100).toFixed(2));
+  });
+  const adoptData=sprints.map(s=>{
+    const rows=getRows(s,filterT,filterP);
+    const usd=sumC(rows,'#US/Defects');
+    const sub=sumC(rows,'#GenAI SubTask');
+    return usd>0?parseFloat((sub/usd*100).toFixed(2)):0;
+  });
+  if(charts.cAiTrend) charts.cAiTrend.destroy();
+  charts.cAiTrend=new Chart(document.getElementById('chartAiTrend'),{type:'line',
+    data:{labels:sprints,datasets:[
+      {label:'Productivity %',data:prodData,borderColor:'#39D98A',backgroundColor:'rgba(57,217,138,0.08)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#39D98A',fill:true,tension:0.35},
+      {label:'Adoption %',data:adoptData,borderColor:'#58A6FF',backgroundColor:'rgba(88,166,255,0.06)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#58A6FF',fill:true,tension:0.35}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:16}},
+      plugins:{legend:{display:true,labels:{color:'#8B949E',boxWidth:9,font:{size:10}}},
+               tooltip:{callbacks:{label:v=>`${v.dataset.label}: ${v.raw}%`},...CHART_OPTS}},
+      scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%',color:'#6E7681',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'},border:{color:'transparent'}},
+              x:{ticks:{color:'#8B949E',font:{size:10}},grid:{display:false},border:{color:'transparent'}}}}});
+}
+
+// ═══════════════════════════════════════════════
+// DOWNLOADS
+// ═══════════════════════════════════════════════
+function downloadChart(id,name){
+  const src=document.getElementById(id);
+  const tmp=document.createElement('canvas');tmp.width=src.width;tmp.height=src.height;
+  const ctx=tmp.getContext('2d');ctx.fillStyle='#161B22';ctx.fillRect(0,0,tmp.width,tmp.height);ctx.drawImage(src,0,0);
+  const a=document.createElement('a');a.href=tmp.toDataURL('image/png');a.download=name+'_'+today()+'.png';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  showToast('Chart saved','success');
+}
+
+function downloadSprintTablePNG(){
+  if(!lastSprintTableRows) return;
+  const {pivot,sprints,towers,sprintTotals}=lastSprintTableRows;
+  const nM=METRICS.length;
+  const tW=160,mW=72;const sGW=nM*mW;
+  const totalW=tW+sprints.length*sGW;
+  const hH1=34,hH2=26,rH=28;
+  const totalH=hH1+hH2+(towers.length+1)*rH;
+  const canvas=document.createElement('canvas');canvas.width=totalW;canvas.height=totalH;
+  const ctx=canvas.getContext('2d');ctx.textBaseline='middle';
+  ctx.fillStyle='#161B22';ctx.fillRect(0,0,totalW,totalH);
+  ctx.fillStyle='#1C2128';ctx.fillRect(0,0,totalW,hH1+hH2);
+  ctx.font='600 9px Outfit,sans-serif';ctx.fillStyle='#6E7681';ctx.textAlign='left';ctx.fillText('TOWER',8,hH1/2);
+  const sc=['#39D98A','#58A6FF','#F0883E','#FF7EB6','#BC8CFF','#E3B341'];
+  const mc=['#58A6FF','#BC8CFF','#F0883E','#E3B341','#39D98A','#FF7EB6'];
+  sprints.forEach((s,si)=>{
+    const gx=tW+si*sGW;ctx.fillStyle=sc[si%sc.length];ctx.font='600 10px Syne,sans-serif';ctx.textAlign='center';
+    ctx.fillText(s,gx+sGW/2,hH1/2);
+    if(si>0){ctx.strokeStyle='rgba(61,68,77,.9)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,hH1+hH2);ctx.stroke();}
+    METRICS.forEach((m,mi)=>{ctx.fillStyle=mc[mi];ctx.font='500 8px DM Mono,monospace';ctx.textAlign='center';ctx.fillText(m.label.toUpperCase(),gx+mi*mW+mW/2,hH1+hH2/2);});
+  });
+  ctx.strokeStyle='rgba(61,68,77,.7)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,hH1+hH2);ctx.lineTo(totalW,hH1+hH2);ctx.stroke();
+  towers.forEach((t,ti)=>{
+    const y=hH1+hH2+ti*rH;
+    if(ti%2===1){ctx.fillStyle='rgba(255,255,255,.015)';ctx.fillRect(0,y,totalW,rH);}
+    ctx.font='400 10px Outfit,sans-serif';ctx.fillStyle='#E6EDF3';ctx.textAlign='left';ctx.fillText(t,8,y+rH/2);
+    sprints.forEach((s,si)=>{
+      const v=pivot[t][s];
+      METRICS.forEach((m,mi)=>{ctx.fillStyle=mc[mi];ctx.font='400 9px DM Mono,monospace';ctx.textAlign='right';ctx.fillText(fmtV(m.key,v),tW+si*sGW+mi*mW+mW-3,y+rH/2);});
+      if(si<sprints.length-1){ctx.strokeStyle='rgba(61,68,77,.5)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(tW+(si+1)*sGW,y);ctx.lineTo(tW+(si+1)*sGW,y+rH);ctx.stroke();}
+    });
+    ctx.strokeStyle='rgba(48,54,61,.5)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,y+rH);ctx.lineTo(totalW,y+rH);ctx.stroke();
+  });
+  const ty=hH1+hH2+towers.length*rH;
+  ctx.fillStyle='rgba(57,217,138,.08)';ctx.fillRect(0,ty,totalW,rH);
+  ctx.strokeStyle='rgba(57,217,138,.35)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,ty);ctx.lineTo(totalW,ty);ctx.stroke();
+  ctx.font='600 10px Outfit,sans-serif';ctx.fillStyle='#39D98A';ctx.textAlign='left';ctx.fillText('Grand Total',8,ty+rH/2);
+  sprints.forEach((s,si)=>{const v=sprintTotals[s];METRICS.forEach((m,mi)=>{ctx.fillStyle=mc[mi];ctx.font='600 9px DM Mono,monospace';ctx.textAlign='right';ctx.fillText(fmtV(m.key,v),tW+si*sGW+mi*mW+mW-3,ty+rH/2);});});
+  const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download='sprint_consolidated_'+today()+'.png';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);showToast('Matrix PNG saved','success');
+}
+
+function exportSprintTableCSV(){
+  if(!lastSprintTableRows) return;
+  const {pivot,sprints,towers,sprintTotals}=lastSprintTableRows;
+  const lines=[['Tower',...sprints.flatMap(s=>METRICS.map((_,i)=>i===0?`"${s}"`:''))].join(',')];
+  lines.push(['',...sprints.flatMap(()=>METRICS.map(m=>`"${m.key==='__prod__'?'Productivity%':m.key}"`))].join(','));
+  towers.forEach(t=>{lines.push([`"${t}"`,...sprints.flatMap(s=>METRICS.map(m=>csvFmt(m.key,pivot[t][s])))].join(','));});
+  lines.push(['"Grand Total"',...sprints.flatMap(s=>METRICS.map(m=>csvFmt(m.key,sprintTotals[s])))].join(','));
+  triggerDL(new Blob([lines.join('\n')],{type:'text/csv'}),'sprint_consolidated_'+today()+'.csv');
+  showToast('CSV downloaded','success');
+}
+function csvFmt(key,v){
+  if(key==='__prod__') return v.pct.toFixed(2)+'%';
+  if(key==='#US/Defects') return Math.round(v.usd);
+  if(key==='#US/Defects SP') return Math.round(v.usp);
+  if(key==='#GenAI SubTask') return Math.round(v.sub);
+  if(key==='#GenAI Saved Hours') return v.hrs.toFixed(1);
+  if(key==='#GenAI Saved SP') return v.ssp.toFixed(1);
+  return '';
+}
+
+function downloadParticipatedPNG(){
+  if(!lastParticipated.length){showToast('No data','error');return;}
+  const cols=['#','Tower','#US/Defects','#Def SP','#SubTask','#Saved Hrs','#Saved SP','Prod%'];
+  const colW=[28,140,85,72,72,82,72,72];
+  const totalW=colW.reduce((a,b)=>a+b,0);
+  const hH=32;const rH=28;
+  const totalH=hH+(lastParticipated.length+1)*rH;
+  const canvas=document.createElement('canvas');canvas.width=totalW;canvas.height=totalH;
+  const ctx=canvas.getContext('2d');ctx.textBaseline='middle';
+  ctx.fillStyle='#161B22';ctx.fillRect(0,0,totalW,totalH);
+  ctx.fillStyle='#1C2128';ctx.fillRect(0,0,totalW,hH);
+  ctx.font='600 9px Outfit,sans-serif';ctx.fillStyle='#6E7681';
+  let x=0;cols.forEach((c,i)=>{ctx.textAlign=i<2?'left':'right';ctx.fillText(c.toUpperCase(),i<2?x+6:x+colW[i]-5,hH/2);x+=colW[i];});
+  ctx.strokeStyle='rgba(61,68,77,.8)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,hH);ctx.lineTo(totalW,hH);ctx.stroke();
+  const cc=['#6E7681','#E6EDF3','#58A6FF','#BC8CFF','#F0883E','#39D98A','#58A6FF','#FF7EB6'];
+  lastParticipated.forEach((it,ri)=>{
+    const y=hH+ri*rH;
+    if(ri%2===1){ctx.fillStyle='rgba(255,255,255,.015)';ctx.fillRect(0,y,totalW,rH);}
+    const vals=[String(ri+1),it.tower,Math.round(it.usd||0).toString(),Math.round(it.usp||0).toString(),Math.round(it.sub||0).toString(),it.hours.toFixed(1),it.sp.toFixed(1),(it.pct||0).toFixed(2)+'%'];
+    x=0;vals.forEach((v,i)=>{ctx.fillStyle=cc[i];ctx.font='400 9px DM Mono,monospace';ctx.textAlign=i<2?'left':'right';ctx.fillText(v,i<2?x+6:x+colW[i]-5,y+rH/2);x+=colW[i];});
+    ctx.strokeStyle='rgba(48,54,61,.5)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,y+rH);ctx.lineTo(totalW,y+rH);ctx.stroke();
+  });
+  const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download='participated_'+today()+'.png';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);showToast('PNG saved','success');
+}
+
+function exportParticipatedExcel(){
+  if(!lastParticipated.length){showToast('No data','error');return;}
+  const ws=XLSX.utils.aoa_to_sheet([['Tower','#US/Defects','#US/Defects SP','#GenAI SubTask','#GenAI Saved Hours','#GenAI Saved SP','Productivity%'],
+    ...lastParticipated.map(it=>[it.tower,Math.round(it.usd||0),Math.round(it.usp||0),Math.round(it.sub||0),+(it.hours||0).toFixed(1),+(it.sp||0).toFixed(1),(it.pct||0).toFixed(2)+'%'])]);
+  ws['!cols']=[{wch:20},{wch:14},{wch:14},{wch:14},{wch:18},{wch:14},{wch:14}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Participated');
+  XLSX.writeFile(wb,'participated_'+today()+'.xlsx');showToast('XLSX downloaded','success');
+}
+function exportNotParticipatedCSV(){
+  if(!lastNotParticipated.length){showToast('No data','error');return;}
+  const lines=[['#','Tower','ACT/PCT/Project','US/Defects','US/Defects SP'].join(',')];
+  lastNotParticipated.forEach((it,i)=>lines.push([i+1,`"${it.tower}"`,`"${it.proj}"`,Math.round(it.usd),Math.round(it.usp)].join(',')));
+  triggerDL(new Blob([lines.join('\n')],{type:'text/csv'}),'not_participated_'+today()+'.csv');showToast('CSV downloaded','success');
+}
+function exportNotParticipatedExcel(){
+  if(!lastNotParticipated.length){showToast('No data','error');return;}
+  const ws=XLSX.utils.aoa_to_sheet([['#','Tower','ACT/PCT/Project','US/Defects','US/Defects SP'],...lastNotParticipated.map((it,i)=>[i+1,it.tower,it.proj,Math.round(it.usd),Math.round(it.usp)])]);
+  ws['!cols']=[{wch:5},{wch:20},{wch:42},{wch:14},{wch:14}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Not Participated');
+  XLSX.writeFile(wb,'not_participated_'+today()+'.xlsx');showToast('XLSX downloaded','success');
+}
+function exportMetricsCSV(){
+  const tower=document.getElementById('towerFilter').value;
+  const project=document.getElementById('projectFilter').value;
+  const sprints=getSprints();
+  const lines=[['Sprint','Tower','ACT/PCT/Project','#US/Defects','#US/Defects SP','#GenAI SubTask','#GenAI Saved Hours','#GenAI Saved SP','Productivity%'].join(',')];
+  sprints.forEach(s=>getAllTowers().forEach(t=>{
+    if(tower!=='ALL'&&t!==tower) return;
+    getAllProjects(t).forEach(pr=>{
+      if(project!=='ALL'&&pr!==project) return;
+      const rows=getRows(s,t,pr);if(!rows.length) return;
+      lines.push([`"${s}"`,`"${t}"`,`"${pr}"`,sumC(rows,'#US/Defects').toFixed(0),sumC(rows,'#US/Defects SP').toFixed(0),sumC(rows,'#GenAI SubTask').toFixed(0),sumC(rows,'#GenAI Saved Hours').toFixed(1),sumC(rows,'#GenAI Saved SP').toFixed(1),(prod(rows)*100).toFixed(2)+'%'].join(','));
+    });
+  }));
+  triggerDL(new Blob([lines.join('\n')],{type:'text/csv'}),'overall_metrics_'+today()+'.csv');showToast('CSV exported','success');
+}
+function exportAdoptionCSV(){
+  if(!lastAdoptionData.length){showToast('No data','error');return;}
+  const lines=[['Tower','#US/Defects','#GenAI SubTask','Adoption%'].join(',')];
+  lastAdoptionData.forEach(d=>lines.push([`"${d.tower}"`,Math.round(d.usd),Math.round(d.sub),d.pct.toFixed(2)+'%'].join(',')));
+  triggerDL(new Blob([lines.join('\n')],{type:'text/csv'}),'adoption_'+today()+'.csv');showToast('CSV downloaded','success');
+}
+
+function downloadTemplate(){
+  const header=['Tower','ACT/PCT/Project','#US/Defects','#US/Defects SP','#GenAI SubTask','#GenAI Saved Hours','#GenAI Saved SP'];
+  const sample=[
+    ['Platform','Project Alpha',12,45,10,8.5,18],
+    ['Platform','Project Beta',8,30,6,4.0,10],
+    ['Data','Project Gamma',15,60,12,10.0,22],
+    ['Data','Project Delta',5,20,3,2.5,5],
+  ];
+  const wb=XLSX.utils.book_new();
+  // Create 2 sample sheets representing Sprint 1 and Sprint 2
+  ['Sprint 1','Sprint 2'].forEach((sName,idx)=>{
+    const rows=[header,...sample.map(r=>[...r.slice(0,2),...r.slice(2).map(v=>typeof v==='number'?Math.round(v*(1+idx*0.1)):v)])];
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:14},{wch:22},{wch:14},{wch:14},{wch:16},{wch:18},{wch:16}];
+    XLSX.utils.book_append_sheet(wb,ws,sName);
+  });
+  XLSX.writeFile(wb,'genai_sprint_template.xlsx');
+  showToast('Template downloaded','success');
+}
+
+function triggerDL(blob,filename){
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);document.body.removeChild(a);},500);
+}
+function today(){return new Date().toISOString().slice(0,10);}
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(type?' '+type:'');
+  setTimeout(()=>t.className='toast',3200);
+}
+</script>
+</body>
+</html>

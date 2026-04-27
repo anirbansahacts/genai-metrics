@@ -1,0 +1,113 @@
+/* ── Desktop: sidebar pushes content ── */
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: #161b22;
+  border-right: 1px solid #21262d;
+  overflow: hidden;
+  transition: width 0.25s ease;
+}
+
+.sidebar.closed {
+  width: 0;
+}
+
+.sidebar-inner {
+  width: 240px; /* fixed so content doesn't reflow during transition */
+  padding: 1.25rem 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sidebar-section-label {
+  padding: 0 1rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #484f58;
+}
+
+.sidebar-nav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 1rem;
+  font-size: 0.875rem;
+  color: #8b949e;
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.sidebar-link:hover {
+  color: #e6edf3;
+  background: #1c2128;
+}
+
+.sidebar-link.active {
+  color: #e6edf3;
+  background: #1c2128;
+  border-left-color: #388bfd;
+}
+
+.sidebar-link-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.sidebar-link-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Mobile: sidebar overlays content ── */
+@media (max-width: 767px) {
+  .sidebar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    bottom: 0;
+    z-index: 50;
+    width: 240px;         /* always 240px wide on mobile */
+    transform: translateX(0);
+    transition: transform 0.25s ease;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+  }
+
+  .sidebar.closed {
+    width: 240px;         /* override desktop closed width */
+    transform: translateX(-100%);
+  }
+}
+
+/* ── Mobile backdrop ── */
+.sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 60px 0 0 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 49;
+    animation: fadeIn 0.2s ease;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
