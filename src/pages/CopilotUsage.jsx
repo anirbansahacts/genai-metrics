@@ -1,3 +1,5 @@
+import React from 'react'
+
 export default function CopilotUsage() {
   return (
     <div className="page-placeholder">
