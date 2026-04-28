@@ -20,6 +20,12 @@ const apps = [
     description: 'Side-by-side comparison of Copilot-assisted commits vs standard Git activity with Tower metrics.',
     icon: '',
   },
+  {
+    path: '/batch-flow',
+    title: 'BatchFlow Manager',
+    description: 'Monitor and analyze batch processing workflows and pipeline execution metrics.',
+    icon: '',
+  },
 ]
 
 export default function GenaiReports() {

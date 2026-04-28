@@ -12,6 +12,7 @@ const mainSections = [
       { path: '/weekly-status', label: 'Weekly Status Report', icon: '' },
       { path: '/sprint-productivity', label: 'Sprint Productivity Analytics', icon: '' },
       { path: '/copilot-vs-git', label: 'Copilot vs Git', icon: '' },
+      { path: '/batch-flow', label: 'BatchFlow', icon: '' },
     ]
   },
   {
