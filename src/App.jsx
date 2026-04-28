@@ -3,12 +3,11 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Sidebar from './components/Sidebar'
 import Home from './pages/Home'
-import GhcpInteraction from './pages/GhcpInteraction'
-import CopilotUsage from './pages/CopilotUsage'
+import GenaiReports from './pages/GenaiReports'
+import CpiAnalytics from './pages/CpiAnalytics'
 import WeeklyStatus from './pages/WeeklyStatus'
 import SprintProductivity from './pages/SprintProductivity'
 import CopilotVsGit from './pages/CopilotVsGit'
-import BatchFlow from './pages/BatchFlow'
 import UploadPortal from './pages/UploadPortal'
 
 export default function App() {
@@ -31,12 +30,11 @@ export default function App() {
         <main className="main-content">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/ghcp-interaction" element={<GhcpInteraction />} />
-            <Route path="/copilot-usage" element={<CopilotUsage />} />
+            <Route path="/genai-reports" element={<GenaiReports />} />
+            <Route path="/cpi-analytics" element={<CpiAnalytics />} />
             <Route path="/weekly-status" element={<WeeklyStatus />} />
             <Route path="/sprint-productivity" element={<SprintProductivity />} />
             <Route path="/copilot-vs-git" element={<CopilotVsGit />} />
-            <Route path="/batch-flow" element={<BatchFlow />} />
             <Route path="/upload" element={<UploadPortal />} />
           </Routes>
         </main>

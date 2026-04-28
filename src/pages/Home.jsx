@@ -1,42 +1,18 @@
 import { Link } from 'react-router-dom'
 import './Home.css'
 
-const apps = [
+const mainSections = [
   {
-    path: '/ghcp-interaction',
-    title: 'GHCP Usage Compare',
-    description: 'Compare GitHub Copilot interaction usage metrics across teams and time periods.',
-    icon: '📊',
+    path: '/genai-reports',
+    title: 'GenAI Reports',
+    description: 'Comprehensive analytics and insights for GitHub Copilot and AI-assisted development metrics.',
+    icon: '',
   },
   {
-    path: '/copilot-usage',
-    title: 'CoPilot Usage Report',
-    description: 'Detailed usage reports for GitHub Copilot adoption and engagement across the organization.',
-    icon: '🤖',
-  },
-  {
-    path: '/weekly-status',
-    title: 'Weekly Status Report',
-    description: 'Weekly aggregated status reports tracking GenAI tool performance and developer productivity.',
-    icon: '📅',
-  },
-  {
-    path: '/sprint-productivity',
-    title: 'Sprint Productivity Analytics',
-    description: 'Analyze sprint-level productivity metrics and the impact of AI-assisted development.',
-    icon: '⚡',
-  },
-  {
-    path: '/copilot-vs-git',
-    title: 'Copilot vs Git',
-    description: 'Side-by-side comparison of Copilot-assisted commits vs standard Git activity with Tower metrics.',
-    icon: '🔀',
-  },
-  {
-    path: '/batch-flow',
-    title: 'BatchFlow',
-    description: 'Monitor and analyze batch processing workflows and pipeline execution metrics.',
-    icon: '🔄',
+    path: '/cpi-analytics',
+    title: 'Service Governance',
+    description: 'CPI Analytics, service governance metrics, and process optimization insights.',
+    icon: '',
   },
 ]
 
@@ -44,24 +20,18 @@ export default function Home() {
   return (
     <div className="home">
       <header className="home-header">
-        <h1>GenAI Metrics</h1>
-        <p>Consolidated analytics platform for GitHub Copilot and AI-assisted development insights</p>
+        <h1>Flex 2.0 Tools</h1>
+        <p>Integrated platform for AI-assisted development analytics and service governance</p>
       </header>
       <div className="apps-grid">
-        {apps.map(({ path, title, description, icon }) => (
+        {mainSections.map(({ path, title, description, icon }) => (
           <Link to={path} key={path} className="app-card">
             <div className="app-card-icon">{icon}</div>
             <h2>{title}</h2>
             <p>{description}</p>
-            <span className="app-card-cta">Open Dashboard &rarr;</span>
+            <span className="app-card-cta">Explore &rarr;</span>
           </Link>
         ))}
-        <Link to="/upload" className="app-card upload-card">
-          <div className="app-card-icon">🔒</div>
-          <h2>Upload Portal</h2>
-          <p>Securely upload data files to populate the analytics dashboards.</p>
-          <span className="app-card-cta">Go to Upload &rarr;</span>
-        </Link>
       </div>
     </div>
   )

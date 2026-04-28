@@ -4,7 +4,7 @@ export default function CopilotVsGit() {
   return (
     <div className="page-placeholder">
       <div className="placeholder-inner">
-        <span className="placeholder-icon">🔀</span>
+        <span className="placeholder-icon"></span>
         <h1>Copilot vs Git Analytics Dashboard and Tower Metrics</h1>
         <p>
           This dashboard will provide a side-by-side comparison of Copilot-assisted

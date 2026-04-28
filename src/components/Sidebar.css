@@ -111,3 +111,59 @@
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+
+/* ── Expandable sections ── */
+.sidebar-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: #7d8590;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-radius: 6px;
+  margin-bottom: 0.25rem;
+  user-select: none;
+}
+
+.sidebar-section-header:hover {
+  color: #e6edf3;
+  background: #1c2128;
+}
+
+.sidebar-section-header.expanded {
+  color: #e6edf3;
+  background: #1c2128;
+}
+
+.expand-arrow {
+  margin-left: auto;
+  font-size: 0.75rem;
+  transition: transform 0.15s ease;
+}
+
+.sidebar-subnav {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.5rem 0;
+  padding-left: 1rem;
+}
+
+.sidebar-subnav .sidebar-link {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  border-left: 2px solid transparent;
+}
+
+.sidebar-subnav .sidebar-link.sub-item {
+  margin-left: 0.5rem;
+}
+
+.sidebar-subnav .sidebar-link:hover {
+  background: rgba(28, 33, 40, 0.6);
+}
+
+.sidebar-subnav .sidebar-link.active {
+  background: rgba(28, 33, 40, 0.8);
+  border-left-color: #388bfd;
+}
