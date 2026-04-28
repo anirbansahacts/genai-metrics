@@ -1,0 +1,1666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTS | Copilot vs Git Analytics Dashboard and Tower Metrics</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.27.0/lib/msal-browser.min.js"></script>
+<style>
+:root{
+  --b:#1a3c6e;--bm:#2557a7;--bl:#e8f0fc;--ac:#0078d4;
+  --tl:#0097a7;--re:#c0392b;--gr:#1a7a4a;--am:#e67e22;
+  --bg:#f4f6f9;--bo:#d0d7e2;--gt:#5a6478;--dk:#1a1f2e;--wh:#ffffff;
+  --fm:'IBM Plex Sans',sans-serif;--mo:'IBM Plex Mono',monospace;
+  --sh:0 4px 12px rgba(0,0,0,.1);--r:8px;--rl:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--fm);background:var(--bg);color:var(--dk);min-height:100vh;font-size:14px;}
+.hdr{background:var(--b);padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:3px solid var(--ac);}
+.hdr-l{display:flex;align-items:center;gap:14px;}
+.logo{font-size:22px;font-weight:600;color:#fff;letter-spacing:3px;}
+.hdiv{width:1px;height:28px;background:rgba(255,255,255,.25);}
+.htitle{font-size:13px;color:rgba(255,255,255,.72);}
+.hdr-r{display:flex;align-items:center;gap:10px;}
+.benv{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:11px;padding:3px 10px;border-radius:4px;font-family:var(--mo);}
+.nav-bar{background:var(--b);border-bottom:1px solid rgba(255,255,255,.12);padding:0 28px;display:flex;gap:4px;}
+.nav-tab{padding:10px 20px;font-size:13px;font-weight:500;color:rgba(255,255,255,.6);border:none;background:transparent;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;font-family:var(--fm);transition:all .15s;}
+.nav-tab.active{color:#fff;border-bottom-color:var(--ac);}
+.nav-tab:hover:not(.active){color:rgba(255,255,255,.85);}
+.main{max-width:1440px;margin:0 auto;padding:24px;}
+.page{display:none;}.page.active{display:block;}
+.upload-zone{background:var(--wh);border:1.5px dashed var(--bo);border-radius:var(--rl);padding:40px;text-align:center;margin-bottom:22px;cursor:pointer;}
+.upload-zone.dragging{border-color:var(--ac);background:var(--bl);}
+.upload-zone.has-data{border-style:solid;border-color:var(--gr);background:#f0faf5;padding:20px;}
+.uicon{width:52px;height:52px;background:var(--bl);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:22px;}
+.utitle{font-size:16px;font-weight:600;color:var(--b);margin-bottom:6px;}
+.usub{font-size:13px;color:var(--gt);}
+.fchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;justify-content:center;}
+.fchip{background:var(--bl);border:1px solid #b8d0f0;border-radius:20px;padding:4px 12px;font-size:12px;color:var(--bm);display:flex;align-items:center;gap:6px;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:var(--fm);transition:all .15s;}
+.bp{background:var(--ac);color:#fff;}.bp:hover{background:var(--bm);}
+.bo{background:transparent;border:1.5px solid var(--bo);color:var(--dk);}.bo:hover{background:var(--bg);}
+.bg{background:var(--gr);color:#fff;}.bg:hover{background:#145e38;}
+.bt{background:var(--tl);color:#fff;}.bt:hover{background:#00838f;}
+.ba{background:var(--am);color:#fff;}.ba:hover{background:#ca6f1e;}
+.br{background:var(--re);color:#fff;}.br:hover{background:#a93226;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.ctrl-panel{background:var(--wh);border:1px solid var(--bo);border-radius:var(--rl);padding:18px 22px;margin-bottom:20px;}
+.ctrl-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end;}
+.cg label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--gt);margin-bottom:5px;}
+.cg input,.cg select{width:100%;padding:8px 12px;border:1px solid var(--bo);border-radius:var(--r);font-size:13px;font-family:var(--fm);color:var(--dk);background:var(--wh);}
+.cg input:focus,.cg select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3px rgba(0,120,212,.1);}
+.pw{position:relative;}.ps{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--gt);pointer-events:none;}
+.cactions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding-top:14px;border-top:1px solid var(--bo);margin-top:12px;}
+.cmapper{background:#fffbea;border:1px solid #f5e6a3;border-radius:var(--r);padding:16px;margin-bottom:18px;}
+.cmtitle{font-size:11px;font-weight:600;color:#8a6d00;text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px;}
+.cmgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.cmrow label{font-size:11px;color:#6b5700;margin-bottom:3px;display:block;font-weight:500;}
+.cmrow select{width:100%;padding:6px 8px;border:1px solid #e0c94a;border-radius:6px;font-size:11px;background:#fffef5;color:#2c2400;font-family:var(--fm);}
+.mrow{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.mc{background:var(--wh);border:1px solid var(--bo);border-radius:var(--rl);padding:18px;position:relative;overflow:hidden;}
+.mc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.mc.bl::before{background:var(--ac);}.mc.gr::before{background:var(--gr);}
+.mc.am::before{background:var(--am);}.mc.re::before{background:var(--re);}
+.mlabel{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--gt);margin-bottom:6px;}
+.mval{font-size:30px;font-weight:300;color:var(--dk);line-height:1;font-family:var(--mo);}
+.msub{font-size:12px;color:var(--gt);margin-top:4px;}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px;}
+.cc{background:var(--wh);border:1px solid var(--bo);border-radius:var(--rl);padding:18px;}
+.cch{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--bo);}
+.cct{font-size:14px;font-weight:600;color:var(--dk);}
+.ccs{font-size:12px;color:var(--gt);}
+.cw{position:relative;height:260px;}
+.rs{background:var(--wh);border:1px solid var(--bo);border-radius:var(--rl);margin-bottom:20px;overflow:hidden;}
+.rh{padding:14px 18px;background:var(--b);display:flex;align-items:center;justify-content:space-between;}
+.rt{font-size:14px;font-weight:600;color:#fff;}
+.ra{display:flex;gap:8px;}
+.tbar{display:flex;border-bottom:1px solid var(--bo);padding:0 18px;background:#fafbfd;}
+.tbtn{padding:9px 18px;font-size:13px;font-weight:500;color:var(--gt);border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:var(--fm);transition:all .15s;}
+.tbtn.active{color:var(--ac);border-bottom-color:var(--ac);}
+.tbtn:hover:not(.active){color:var(--dk);}
+.tw{overflow-x:auto;max-height:440px;overflow-y:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead{position:sticky;top:0;z-index:5;}
+thead th{background:#f0f3f8;padding:9px 13px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--gt);border-bottom:1px solid var(--bo);white-space:nowrap;}
+tbody tr{border-bottom:1px solid #f0f3f8;transition:background .1s;}
+tbody tr:hover{background:var(--bl);}
+tbody td{padding:8px 13px;color:var(--dk);}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;}
+.tf{background:#fdecea;color:var(--re);}.tp{background:#e8f5ee;color:var(--gr);}
+.tw2{background:#fef3e2;color:var(--am);}.tb2{background:#e8f0fc;color:var(--bm);}
+.dn{color:var(--re);font-weight:600;font-family:var(--mo);}.dp{color:var(--gr);font-family:var(--mo);}
+.tower-num{font-family:var(--mo);font-size:13px;text-align:right;}
+.disp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;padding:18px;}
+.disp-card{border:1px solid var(--bo);border-radius:var(--rl);overflow:hidden;}
+.disp-card-hdr{padding:10px 14px;font-size:13px;font-weight:600;color:var(--dk);background:#f7f9fc;border-bottom:1px solid var(--bo);}
+.disp-row{display:flex;justify-content:space-between;align-items:center;padding:7px 14px;border-bottom:1px solid #f4f6f9;font-size:12px;}
+.disp-row:last-child{border-bottom:none;}
+.disp-label{color:var(--gt);flex:1;padding-right:8px;line-height:1.4;}
+.disp-val{font-family:var(--mo);font-weight:600;font-size:13px;color:var(--dk);white-space:nowrap;}
+.cn{background:#f3e5f5;color:#6a1b9a;}.cl{background:#fff3e0;color:#bf6000;}
+.ca{background:#e3f2fd;color:#1565c0;}.cp{background:#e8f5e9;color:#2e7d32;}
+.cm2{background:#fafafa;color:#666;}
+.mov{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;}
+.mov.open{display:flex;}
+.mdl{background:var(--wh);border-radius:var(--rl);width:720px;max-height:90vh;overflow-y:auto;box-shadow:var(--sh);}
+.mhdr{padding:18px 22px;background:var(--b);border-radius:var(--rl) var(--rl) 0 0;display:flex;align-items:center;justify-content:space-between;}
+.mttl{font-size:15px;font-weight:600;color:#fff;}
+.mclose{background:transparent;border:none;color:rgba(255,255,255,.7);font-size:20px;cursor:pointer;line-height:1;padding:4px;}
+.mclose:hover{color:#fff;}
+.mbody{padding:22px;}
+.mst{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--gt);margin-bottom:7px;margin-top:18px;}
+.mst:first-child{margin-top:0;}
+.mbody textarea,.mbody input[type=text]{width:100%;padding:9px 12px;border:1px solid var(--bo);border-radius:var(--r);font-size:13px;font-family:var(--fm);color:var(--dk);}
+.mbody textarea{min-height:100px;resize:vertical;}
+.rlist{max-height:200px;overflow-y:auto;border:1px solid var(--bo);border-radius:var(--r);}
+.ritem{padding:8px 13px;border-bottom:1px solid #f0f3f8;display:flex;align-items:center;justify-content:space-between;font-size:13px;}
+.ritem:last-child{border-bottom:none;}
+.remail{font-family:var(--mo);font-size:12px;color:var(--ac);}
+.mfoot{padding:14px 22px;background:#fafbfd;border-top:1px solid var(--bo);display:flex;justify-content:space-between;align-items:center;border-radius:0 0 var(--rl) var(--rl);}
+.mfnote{font-size:12px;color:var(--gt);max-width:260px;line-height:1.4;}
+.mfbtns{display:flex;gap:10px;}
+.pb-wrap{background:#e8edf5;border-radius:4px;height:6px;overflow:hidden;margin:7px 0;}
+.pb-fill{height:100%;background:var(--ac);border-radius:4px;transition:width .3s;}
+.sbox{display:none;margin-top:12px;padding:12px 14px;border-radius:var(--r);font-size:13px;line-height:1.7;border:1px solid;}
+.slog{max-height:180px;overflow-y:auto;margin-top:10px;font-size:11px;font-family:var(--mo);color:var(--gt);line-height:1.8;}
+.conf-mdl{background:var(--wh);border-radius:var(--rl);width:420px;overflow:hidden;box-shadow:var(--sh);}
+.conf-hdr{padding:18px 22px;background:var(--re);display:flex;align-items:center;gap:12px;}
+.conf-body{padding:18px 22px;font-size:14px;line-height:1.7;}
+.conf-foot{padding:12px 22px;background:#fafbfd;border-top:1px solid var(--bo);display:flex;justify-content:flex-end;gap:10px;}
+.empty{text-align:center;padding:60px 20px;color:var(--gt);}
+.empty-ico{font-size:48px;margin-bottom:12px;}
+.empty-txt{font-size:15px;font-weight:500;margin-bottom:6px;color:var(--dk);}
+.tcon{position:fixed;top:76px;right:22px;z-index:300;display:flex;flex-direction:column;gap:8px;}
+.tst{background:var(--dk);color:#fff;padding:11px 16px;border-radius:var(--r);font-size:13px;display:flex;align-items:center;gap:9px;box-shadow:var(--sh);animation:si .2s ease;}
+.tst.success{background:var(--gr);}.tst.error{background:var(--re);}.tst.info{background:var(--ac);}
+@keyframes si{from{transform:translateX(30px);opacity:0}to{transform:translateX(0);opacity:1}}
+.drill-hdr th{background:#1a3c6e;color:#fff;padding:9px 13px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;border-right:1px solid rgba(255,255,255,.12);}
+.drill-hdr th:last-child{border-right:none;}
+.drill-body tr{border-bottom:1px solid #f0f3f8;transition:background .1s;}
+.drill-body tr:hover{background:var(--bl);}
+.drill-body td{padding:8px 13px;font-size:13px;border-right:1px solid #f0f3f8;}
+.drill-body td:last-child{border-right:none;}
+.drill-body tr:nth-child(even){background:#fafbfd;}
+.drill-body tr:nth-child(even):hover{background:var(--bl);}
+.num-link{cursor:pointer;color:var(--ac);text-decoration:underline;text-underline-offset:2px;font-weight:600;}
+.num-link:hover{color:var(--bm);}
+@media(max-width:900px){.ctrl-row,.mrow,.cmgrid{grid-template-columns:1fr 1fr;}.cgrid,.disp-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-l">
+    <div class="logo">CTS</div><div class="hdiv"></div>
+    <div class="htitle">Copilot vs Git Analytics Dashboard and Tower Metrics</div>
+  </div>
+  <div class="hdr-r">
+    <span class="benv">Internal Tool v3.1</span>
+    <button class="btn br" style="font-size:12px;padding:7px 13px" onclick="confirmReset()">&#8635; Reset All</button>
+  </div>
+</header>
+
+<nav class="nav-bar">
+  <button class="nav-tab active" onclick="switchPage('p-analysis',this)">&#128202; Analysis</button>
+  <button class="nav-tab" onclick="switchPage('p-tower',this)">&#127959; Tower Summary - Has Copilot License</button>
+  <button class="nav-tab" onclick="switchPage('p-metrics',this)">&#128200; Tower Summary Metrics</button>
+</nav>
+
+<div class="tcon" id="toastContainer"></div>
+
+<div class="main">
+
+<!-- UPLOAD (shared, always visible) -->
+<div id="sharedUpload">
+  <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+    <div id="uploadDefault">
+      <div class="uicon">&#128196;</div>
+      <div class="utitle">Upload Data Files</div>
+      <div class="usub">Drag &amp; drop XLSX or CSV files, or click to browse</div>
+      <div style="margin-top:16px">
+        <span class="btn bp" style="pointer-events:none">&#43; Select Files</span>
+        <span style="font-size:12px;color:var(--gt);margin-left:12px">Supports .xlsx, .xls, .csv</span>
+      </div>
+    </div>
+    <div id="uploadDone" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:12px">
+        <span style="font-size:20px;color:var(--gr)">&#10004;</span>
+        <span style="font-weight:600;color:var(--gr)" id="fileCountLabel">0 files loaded</span>
+        <button class="btn bo" style="font-size:12px;padding:4px 9px" onclick="event.stopPropagation();document.getElementById('fileInput').click()">Add More</button>
+      </div>
+      <div class="fchips" id="fileChips"></div>
+    </div>
+  </div>
+  <input type="file" id="fileInput" style="display:none" multiple accept=".xlsx,.xls,.csv" onchange="handleFiles(this.files)">
+
+  <div class="cmapper" id="colMapper" style="display:none">
+    <div class="cmtitle">&#9881; Column Mapping — map your file columns to the required fields</div>
+    <div class="cmgrid" id="colMapGrid"></div>
+    <div style="margin-top:10px;display:flex;gap:10px;align-items:center">
+      <button class="btn bp" style="font-size:12px;padding:7px 14px" onclick="applyMapping()">Apply &amp; Analyze</button>
+      <span style="font-size:11px;color:#8a6d00">* = required. All other columns are optional.</span>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 1: ANALYSIS -->
+<div class="page active" id="p-analysis">
+  <div class="ctrl-panel">
+    <div class="ctrl-row">
+      <div class="cg">
+        <label>Threshold (%)</label>
+        <div class="pw"><input type="number" id="pctThreshold" value="60" min="0" max="100" step="1" oninput="runAnalysis()"><span class="ps">%</span></div>
+      </div>
+      <div class="cg">
+        <label>Metric View</label>
+        <select id="metricView" onchange="runAnalysis()">
+          <option value="both">Both Metrics</option>
+          <option value="final">Final Copilot &lt; Final Git</option>
+          <option value="added">Added Copilot &lt; Added Git</option>
+        </select>
+      </div>
+      <div class="cg">
+        <label>Final Status</label>
+        <select id="filterStatus" onchange="runAnalysis()">
+          <option value="Active" selected>Active</option>
+          <option value="All">All</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+      </div>
+      <div class="cg">
+        <label>Has Copilot License</label>
+        <select id="filterLicense" onchange="runAnalysis()">
+          <option value="Yes" selected>Yes</option>
+          <option value="All">All</option>
+          <option value="No">No</option>
+        </select>
+      </div>
+      <div class="cg">
+        <label>Search Associate</label>
+        <input type="text" id="searchInput" placeholder="ID or Name..." oninput="renderTable()">
+      </div>
+    </div>
+    <div class="cactions">
+      <button class="btn bg" onclick="downloadCSV()" id="btnCSV" disabled>&#11015; CSV</button>
+      <button class="btn bt" onclick="downloadXLSX()" id="btnXLSX" disabled>&#11015; XLSX</button>
+    </div>
+  </div>
+
+  <div class="mrow">
+    <div class="mc bl"><div class="mlabel">Total Associates</div><div class="mval" id="m-total">—</div><div class="msub">filtered dataset</div></div>
+    <div class="mc gr"><div class="mlabel">Final: Copilot &lt; Git</div><div class="mval" id="m-final">—</div><div class="msub" id="m-final-sub">at threshold</div></div>
+    <div class="mc am"><div class="mlabel">Added: Copilot &lt; Git</div><div class="mval" id="m-added">—</div><div class="msub" id="m-added-sub">at threshold</div></div>
+    <div class="mc re"><div class="mlabel">Both Criteria Below</div><div class="mval" id="m-both">—</div><div class="msub" id="m-both-sub">immediate review</div></div>
+  </div>
+
+  <div class="cgrid" id="chartsGrid" style="display:none">
+    <div class="cc"><div class="cch"><div><div class="cct">Final Copilot vs Final Git</div><div class="ccs">Net lines — top 20</div></div></div><div class="cw"><canvas id="chartFinal" role="img" aria-label="Final bar chart">No data.</canvas></div></div>
+    <div class="cc"><div class="cch"><div><div class="cct">Added Copilot vs Added Git</div><div class="ccs">Raw lines added — top 20</div></div></div><div class="cw"><canvas id="chartAdded" role="img" aria-label="Added bar chart">No data.</canvas></div></div>
+    <div class="cc"><div class="cch"><div><div class="cct">Threshold Breach Overview</div><div class="ccs">Pass vs fail at threshold</div></div></div><div class="cw"><canvas id="chartBreach" role="img" aria-label="Breach chart">No data.</canvas></div></div>
+    <div class="cc"><div class="cch"><div><div class="cct">Copilot Utilization Ratio</div><div class="ccs">Copilot % of Git — red = below</div></div></div><div class="cw"><canvas id="chartRatio" role="img" aria-label="Ratio scatter">No data.</canvas></div></div>
+  </div>
+
+  <div class="rs" id="resultsSection" style="display:none">
+    <div class="rh">
+      <div class="rt" id="resultsTitleText">Analysis Results</div>
+      <div class="ra">
+        <button class="btn bo" style="color:#fff;border-color:rgba(255,255,255,.3);font-size:12px" onclick="downloadCSV()">&#11015; CSV</button>
+        <button class="btn bo" style="color:#fff;border-color:rgba(255,255,255,.3);font-size:12px" onclick="downloadXLSX()">&#11015; XLSX</button>
+      </div>
+    </div>
+    <div class="tbar">
+      <button class="tbtn active" onclick="switchTab('all',this)">All</button>
+      <button class="tbtn" onclick="switchTab('fail-final',this)">Final Below</button>
+      <button class="tbtn" onclick="switchTab('fail-added',this)">Added Below</button>
+      <button class="tbtn" onclick="switchTab('fail-both',this)">Both Below</button>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Associate ID</th><th>Name</th><th>Status</th><th>License</th>
+          <th>Final Copilot</th><th>Final Git</th><th>Copilot% of Git</th><th>Final</th>
+          <th>Added Copilot</th><th>Added Git</th><th>Copilot% of Git</th><th>Added</th><th>Overall</th>
+        </tr></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div id="tableEmpty" class="empty" style="display:none"><div class="empty-ico">&#128269;</div><div class="empty-txt">No records match the current filter</div></div>
+  </div>
+
+  <div id="placeholderSection" class="rs">
+    <div class="empty" style="padding:70px 20px">
+      <div class="empty-ico">&#128202;</div>
+      <div class="empty-txt">Upload XLSX or CSV files to begin analysis</div>
+      <div style="font-size:13px;margin-top:6px">Map columns then click Apply &amp; Analyze</div>
+    </div>
+  </div>
+</div><!-- /p-analysis -->
+
+<!-- PAGE 2: TOWER SUMMARY -->
+<div class="page" id="p-tower">
+
+  <div class="ctrl-panel">
+    <div class="ctrl-row">
+      <div class="cg">
+        <label>Final Status</label>
+        <select id="tw-status" onchange="renderTower()">
+          <option value="All" selected>All</option>
+        </select>
+      </div>
+      <div class="cg">
+        <label>Has Copilot License</label>
+        <select id="tw-license" onchange="renderTower()">
+          <option value="All" selected>All</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+        </select>
+      </div>
+      <div class="cg">
+        <label>Active GitLab Account</label>
+        <select id="tw-gitlab" onchange="renderTower()">
+          <option value="All" selected>All</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="rs" id="towerTableCard">
+    <div class="rh">
+      <div class="rt">Tower Summary — Averages</div>
+      <div class="ra">
+        <button class="btn bo" style="color:#fff;border-color:rgba(255,255,255,.3);font-size:12px" onclick="downloadTowerCSV()">&#11015; CSV</button>
+        <button class="btn bt" style="font-size:12px" onclick="downloadTowerXLSX()">&#11015; XLSX</button>
+      </div>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Tower</th>
+          <th style="text-align:right">Associates</th>
+          <th style="text-align:right">Avg Copilot Interactions</th>
+          <th style="text-align:right">Avg Copilot Usage</th>
+          <th style="text-align:right">Copilot Added Lines</th>
+          <th style="text-align:right">Copilot Final Lines</th>
+          <th style="text-align:right">Avg GitLab Commits</th>
+          <th style="text-align:right">Git Added Lines</th>
+          <th style="text-align:right">Git Final Lines</th>
+        </tr></thead>
+        <tbody id="towerBody"></tbody>
+      </table>
+    </div>
+    <div id="towerEmpty" class="empty" style="display:none;padding:40px">
+      <div class="empty-ico">&#127959;</div>
+      <div class="empty-txt" id="towerEmptyMsg">Upload and map data to see tower summaries</div>
+    </div>
+  </div>
+
+  <div class="rs" id="dispSection">
+    <div class="rh">
+      <div class="rt">Disposition Analysis by Tower - Based on Copilot Added Lines</div>
+    </div>
+    <div id="dispContent">
+      <div class="empty" style="padding:40px"><div class="empty-ico">&#128203;</div><div class="empty-txt">Disposition categories will appear after data is loaded</div></div>
+    </div>
+  </div>
+
+  <div id="towerInsightsCard" style="display:none;margin-bottom:20px">
+    <div class="rs" style="overflow:visible">
+      <div class="rh" style="background:linear-gradient(135deg,#1a3c6e,#2557a7)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:18px">&#129504;</span>
+          <div class="rt">AI Insights — Tower Summary</div>
+        </div>
+        <button class="btn bo" style="color:#fff;border-color:rgba(255,255,255,.3);font-size:12px" onclick="generateInsights('tower',towerRows,null,true)">&#8635; Refresh</button>
+      </div>
+      <div id="towerInsightsBody" style="padding:20px;font-size:14px;line-height:1.8;color:var(--dk)">
+        <div style="color:var(--gt);font-style:italic">Generating insights...</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /p-tower -->
+
+<!-- PAGE 3: TOWER SUMMARY METRICS -->
+<div class="page" id="p-metrics">
+
+  <div class="ctrl-panel">
+    <div class="ctrl-row">
+      <div class="cg">
+        <label>Final Status</label>
+        <select id="tm-status" onchange="renderMetrics()">
+          <option value="All" selected>All</option>
+        </select>
+      </div>
+      <div class="cg">
+        <label>Active GitLab Account</label>
+        <select id="tm-gitlab" onchange="renderMetrics()">
+          <option value="All" selected>All</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="rs">
+    <div class="rh">
+      <div class="rt">Tower Summary — Averages</div>
+      <div class="ra">
+        <button class="btn bo" style="color:#fff;border-color:rgba(255,255,255,.3);font-size:12px" onclick="downloadMetricsCSV()">&#11015; CSV</button>
+        <button class="btn bt" style="font-size:12px" onclick="downloadMetricsXLSX()">&#11015; XLSX</button>
+      </div>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Tower</th>
+          <th style="text-align:right">Associates</th>
+          <th style="text-align:right">Has Copilot License</th>
+          <th style="text-align:right">Copilot Interactions</th>
+          <th style="text-align:right">Copilot Usage</th>
+          <th style="text-align:right">Copilot Added Lines</th>
+          <th style="text-align:right">Copilot Final Lines</th>
+          <th style="text-align:right">GitLab Commits</th>
+          <th style="text-align:right">Git Added Lines</th>
+          <th style="text-align:right">Git Final Lines</th>
+          <th style="text-align:right">Low User</th>
+          <th style="text-align:right">Average User</th>
+          <th style="text-align:right">Power User</th>
+        </tr></thead>
+        <tbody id="metricsBody"></tbody>
+      </table>
+    </div>
+    <div id="metricsEmpty" class="empty" style="display:none;padding:40px">
+      <div class="empty-ico">&#127959;</div>
+      <div class="empty-txt" id="metricsEmptyMsg">Upload and map data to see metrics</div>
+    </div>
+  </div>
+
+  <div class="rs" id="metricsDispSection">
+    <div class="rh">
+      <div class="rt">Disposition Analysis by Tower - Based on Copilot Added Lines</div>
+      </div>
+    </div>
+    <div id="metricsDispContent">
+      <div class="empty" style="padding:40px"><div class="empty-ico">&#128203;</div><div class="empty-txt">Disposition will appear after data is loaded</div></div>
+    </div>
+  </div>
+
+
+  <div id="metricsInsightsCard" style="display:none;margin-bottom:20px">
+    <div class="rs" style="overflow:visible">
+      <div class="rh" style="background:linear-gradient(135deg,#1a3c6e,#2557a7)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:18px">&#129504;</span>
+          <div class="rt">AI Insights — Tower Summary Metrics</div>
+        </div>
+        <button class="btn bo" style="color:#fff;border-color:rgba(255,255,255,.3);font-size:12px" onclick="generateInsights('metrics',metricsRows,null,true)">&#8635; Refresh</button>
+      </div>
+      <div id="metricsInsightsBody" style="padding:20px;font-size:14px;line-height:1.8;color:var(--dk)">
+        <div style="color:var(--gt);font-style:italic">Generating insights...</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /p-metrics -->
+</div><!-- /main -->
+
+<!-- DRILL-DOWN POPUP -->
+<div class="mov" id="drillModal">
+  <div class="mdl" style="width:92vw;max-width:1100px;max-height:88vh">
+    <div class="mhdr" style="background:var(--b)">
+      <div>
+        <div class="mttl" id="drillTitle">Associate Details</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px" id="drillSubtitle"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="btn bo" style="color:#fff;border-color:rgba(255,255,255,.3);font-size:12px" onclick="downloadDrillCSV()">&#11015; CSV</button>
+        <button class="mclose" onclick="closeDrill()">&#10005;</button>
+      </div>
+    </div>
+    <div style="overflow:auto;max-height:calc(88vh - 80px)">
+      <table id="drillTable" style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr id="drillHead" style="position:sticky;top:0;z-index:5"></tr>
+        </thead>
+        <tbody id="drillBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- EMAIL MODAL -->
+<div class="mov" id="emailModal">
+  <div class="mdl">
+    <div class="mhdr"><div class="mttl">&#9993; Send Individual Email Reports</div><button class="mclose" onclick="closeEmailModal()">&#10005;</button></div>
+    <div class="mbody">
+      <div id="emailStep1">
+        <div style="background:#f0f6ff;border:1px solid #b8d0f0;border-radius:var(--r);padding:14px;margin-bottom:14px">
+          <div style="font-size:13px;font-weight:600;color:var(--b);margin-bottom:5px">Step 1 — Sign in with your Cognizant Microsoft account</div>
+          <div style="font-size:12px;color:var(--gt);margin-bottom:10px">Grants Mail.Send permission via Microsoft Graph. Token used only for this session.</div>
+          <button class="btn bp" onclick="msalSignIn()" id="btnMsalSignIn">
+            <svg width="16" height="16" viewBox="0 0 21 21" fill="none"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+            Sign in with Microsoft
+          </button>
+          <span id="msalSignedInAs" style="font-size:12px;color:var(--gr);margin-left:12px;display:none"></span>
+        </div>
+        <div class="mst">Subject Line</div>
+        <input type="text" id="emailSubject" value="[CTS] Your Copilot vs Git Productivity Report">
+        <div class="mst">Message Preamble</div>
+        <textarea id="emailBody">Dear Associate,
+
+Please find your Copilot utilisation metrics compared to your Git contribution data for the current review period.
+
+Regards,
+CTS Productivity Analytics Team</textarea>
+        <div class="mst">Recipients — <span id="recipientCount">0</span> flagged associates</div>
+        <div class="rlist" id="recipientList"></div>
+      </div>
+      <div id="emailStep2" style="display:none">
+        <div style="font-size:13px;color:var(--gt);margin-bottom:10px" id="sendProgressLabel">Sending...</div>
+        <div class="pb-wrap"><div class="pb-fill" id="progressBar" style="width:0%"></div></div>
+        <div class="slog" id="sendLog"></div>
+      </div>
+      <div class="sbox" id="emailStatusBox"></div>
+    </div>
+    <div class="mfoot">
+      <span class="mfnote" id="emailFooterNote">Sign in above to enable sending</span>
+      <div class="mfbtns">
+        <button class="btn bo" onclick="closeEmailModal()">Cancel</button>
+        <button class="btn bp" onclick="sendViaGraph()" id="btnSendNow" disabled>&#9993; Send Emails (<span id="sendCount">0</span>)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM RESET -->
+<div class="mov" id="confirmModal">
+  <div class="conf-mdl">
+    <div class="conf-hdr"><span style="font-size:22px;color:#fff">&#9888;</span><div style="font-size:15px;font-weight:600;color:#fff">Reset Dashboard?</div></div>
+    <div class="conf-body">This will <strong>remove all uploaded files</strong> and clear all analysis, charts and results.</div>
+    <div class="conf-foot"><button class="btn bo" onclick="closeConfirm()">Cancel</button><button class="btn br" onclick="doReset()">Yes, Reset Everything</button></div>
+  </div>
+</div>
+
+<script>
+/* ── STATE ─────────────────────────────────────────────────────── */
+let allData=[], analyzedData=[], currentTab='all', loadedFileCount=0;
+let chartFinal, chartAdded, chartBreach, chartRatio;
+let towerRows=[];
+
+// columnMap holds EXACT column header strings from the file, set by applyMapping()
+let columnMap={
+  assocId:'',name:'',linesAdded:'',linesDeleted:'',addedLines:'',deletedLines:'',
+  finalStatus:'',hasLicense:'',tower:'',interactions:'',usage:'',gitCommits:'',gitlabActive:'',actPct:''
+};
+let detectedColumns=[];
+
+const FIELDS=[
+  {key:'assocId',     label:'Associate ID *',            req:true},
+  {key:'name',        label:'Associate Name',             req:false},
+  {key:'actPct',      label:'ACT/PCT Mapping',           req:false},
+  {key:'linesAdded',  label:'Lines Added (Copilot) *',   req:true},
+  {key:'linesDeleted',label:'Lines Deleted (Copilot) *', req:true},
+  {key:'addedLines',  label:'Added Lines (Git) *',       req:true},
+  {key:'deletedLines',label:'Deleted Lines (Git) *',     req:true},
+  {key:'finalStatus', label:'Final Status',              req:false},
+  {key:'hasLicense',  label:'Has Copilot License',       req:false},
+  {key:'tower',       label:'Tower',                     req:false},
+  {key:'interactions',label:'Copilot Interactions',      req:false},
+  {key:'usage',       label:'Copilot Usage',             req:false},
+  {key:'gitCommits',  label:'GitLab Commits',            req:false},
+  {key:'gitlabActive',label:'Active GitLab Account',     req:false},
+];
+
+/* ── NAV ────────────────────────────────────────────────────────── */
+function switchPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='p-tower') renderTower();
+  if(id==='p-metrics') renderMetrics();
+}
+
+/* ── TOAST ──────────────────────────────────────────────────────── */
+function toast(msg,type='info',dur=3500){
+  const t=document.createElement('div');t.className=`tst ${type}`;
+  t.innerHTML=`<span style="font-weight:600">${{success:'✓',error:'✕',info:'i'}[type]}</span> ${msg}`;
+  document.getElementById('toastContainer').appendChild(t);
+  setTimeout(()=>t.remove(),dur);
+}
+
+/* ── FILE HANDLING ──────────────────────────────────────────────── */
+async function handleFiles(files){
+  for(const f of files) await parseFile(f);
+  if(allData.length>0){
+    loadedFileCount+=files.length;
+    document.getElementById('uploadDefault').style.display='none';
+    document.getElementById('uploadDone').style.display='block';
+    document.getElementById('uploadZone').classList.add('has-data');
+    document.getElementById('fileCountLabel').textContent=`${allData.length} records from ${loadedFileCount} file(s)`;
+    for(const f of files){
+      const c=document.createElement('div');c.className='fchip';
+      c.innerHTML=`<span>📄</span><span>${f.name}</span>`;
+      document.getElementById('fileChips').appendChild(c);
+    }
+    showMapper();
+  }
+}
+async function parseFile(file){
+  return new Promise(res=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      try{
+        const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+        const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+        if(rows.length){detectedColumns=Object.keys(rows[0]);allData.push(...rows);toast(`Loaded ${rows.length} rows from ${file.name}`,'success');}
+      }catch(e){toast(`Error: ${file.name} — ${e.message}`,'error');}
+      res();
+    };
+    r.readAsArrayBuffer(file);
+  });
+}
+
+/* ── COLUMN MAPPER ──────────────────────────────────────────────── */
+function showMapper(){
+  document.getElementById('colMapper').style.display='block';
+  const grid=document.getElementById('colMapGrid');
+  grid.innerHTML='';
+  const opts=['',...detectedColumns].map(c=>`<option value="${c}">${c||'-- select --'}</option>`).join('');
+  FIELDS.forEach(f=>{
+    const g=guessCol(f.key,detectedColumns);
+    if(g) columnMap[f.key]=g;
+    const d=document.createElement('div');d.className='cmrow';
+    d.innerHTML=`<label>${f.label}</label><select id="map_${f.key}">${opts.replace(`value="${g}"`,`value="${g}" selected`)}</select>`;
+    grid.appendChild(d);
+  });
+}
+
+function guessCol(key,cols){
+  const P={
+    assocId:      ['associate id','assoc id','employee id','emp id','associateid','employeeid'],
+    name:         ['associate name','full name','employee name','fullname'],
+    linesAdded:   ['lines added','linesadded','copilot added','added (copilot)'],
+    linesDeleted: ['lines deleted','linesdeleted','copilot deleted','deleted (copilot)'],
+    addedLines:   ['added lines','addedlines','git added','added (git)','added lines (git)'],
+    deletedLines: ['deleted lines','deletedlines','git deleted','deleted (git)','deleted lines (git)'],
+    finalStatus:  ['final status','status','employment status'],
+    hasLicense:   ['has copilot license','copilot license','has license'],
+    tower:        ['tower','tower name','project tower'],
+    interactions: ['copilot interactions','interactions'],
+    usage:        ['copilot usage','usage'],
+    gitCommits:   ['gitlab commits','git commits','commits'],
+    gitlabActive: ['active gitlab account','active gitlab','gitlab active','has gitlab'],
+    actPct:       ['act/pct mapping','act pct','act/pct','actpct','mapping','pct mapping'],
+  };
+  const lc=cols.map(c=>c.toLowerCase().trim());
+  for(const p of(P[key]||[])){
+    const i=lc.findIndex(c=>c===p||c.includes(p));
+    if(i!==-1) return cols[i];
+  }
+  return '';
+}
+
+function applyMapping(){
+  FIELDS.forEach(f=>{
+    const s=document.getElementById(`map_${f.key}`);
+    if(s) columnMap[f.key]=s.value;
+  });
+  const miss=FIELDS.filter(f=>f.req&&!columnMap[f.key]);
+  if(miss.length){toast(`Map required: ${miss.map(f=>f.label).join(', ')}`,'error',5000);return;}
+  document.getElementById('colMapper').style.display='none';
+  populateDynamicDropdowns();
+  runAnalysis();
+  renderTower();
+  renderMetrics();
+}
+
+/* ── ANALYSIS (Page 1) ──────────────────────────────────────────── */
+// Helper: read a value from a row using the mapped column name
+function col(row,key){ return row[columnMap[key]]; }
+
+function runAnalysis(){
+  if(!allData.length||!columnMap.assocId) return;
+  const pct=parseFloat(document.getElementById('pctThreshold').value)||0;
+  const fs=document.getElementById('filterStatus').value;
+  const fl=document.getElementById('filterLicense').value;
+
+  let src=allData.map(row=>{
+    const assocId=String(col(row,'assocId')||'').trim(); if(!assocId) return null;
+    const name   =String(col(row,'name')||'').trim();
+    const la=parseFloat(col(row,'linesAdded'))||0;
+    const ld=parseFloat(col(row,'linesDeleted'))||0;
+    const al=parseFloat(col(row,'addedLines'))||0;
+    const dl=parseFloat(col(row,'deletedLines'))||0;
+    const status  =columnMap.finalStatus ?String(col(row,'finalStatus') ||'Active').trim():'Active';
+    const license =columnMap.hasLicense  ?String(col(row,'hasLicense')  ||'Yes').trim()  :'Yes';
+    const fCop=la-ld, fGit=al-dl, aCop=la, aGit=al;
+    const fR=fGit!==0?(fCop/fGit)*100:null;
+    const aR=aGit!==0?(aCop/aGit)*100:null;
+    const ffinal=fR!==null&&fR<pct, fadded=aR!==null&&aR<pct;
+    return{assocId,name,fCop,fGit,aCop,aGit,fR,aR,ffinal,fadded,fboth:ffinal&&fadded,status,license};
+  }).filter(Boolean);
+
+  if(fs!=='All'&&columnMap.finalStatus) src=src.filter(r=>r.status.toLowerCase()===fs.toLowerCase());
+  if(fl!=='All'&&columnMap.hasLicense){
+    src=src.filter(r=>{const l=r.license.toLowerCase();const y=l==='yes'||l==='true'||l==='1'||l==='y';return fl==='Yes'?y:!y;});
+  }
+  analyzedData=src;
+  updateMetrics(pct);renderCharts();renderTable();
+  document.getElementById('placeholderSection').style.display='none';
+  document.getElementById('resultsSection').style.display='block';
+  document.getElementById('chartsGrid').style.display='grid';
+  ['btnCSV','btnXLSX'].forEach(id=>document.getElementById(id).disabled=false);
+}
+
+function updateMetrics(pct){
+  const t=analyzedData.length,ff=analyzedData.filter(r=>r.ffinal).length;
+  const fa=analyzedData.filter(r=>r.fadded).length,fb=analyzedData.filter(r=>r.fboth).length;
+  document.getElementById('m-total').textContent=t;
+  document.getElementById('m-final').textContent=ff;
+  document.getElementById('m-final-sub').textContent=`${pct}% threshold — ${t?((ff/t)*100).toFixed(2):0}% flagged`;
+  document.getElementById('m-added').textContent=fa;
+  document.getElementById('m-added-sub').textContent=`${pct}% threshold — ${t?((fa/t)*100).toFixed(2):0}% flagged`;
+  document.getElementById('m-both').textContent=fb;
+  document.getElementById('m-both-sub').textContent=`${t?((fb/t)*100).toFixed(2):0}% of associates`;
+}
+
+function dc(ref,id,cfg){if(ref)ref.destroy();return new Chart(document.getElementById(id),cfg);}
+
+function renderCharts(){
+  const top=analyzedData.slice(0,20),lb=top.map(r=>r.assocId||r.name||'?');
+  const pct=parseFloat(document.getElementById('pctThreshold').value)||0;
+  const co={responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:11}}}}};
+  chartFinal=dc(chartFinal,'chartFinal',{type:'bar',data:{labels:lb,datasets:[
+    {label:'Final Copilot',data:top.map(r=>r.fCop),backgroundColor:'#2557a7',borderRadius:3},
+    {label:'Final Git',data:top.map(r=>r.fGit),backgroundColor:'#1a7a4a',borderRadius:3}
+  ]},options:co});
+  chartAdded=dc(chartAdded,'chartAdded',{type:'bar',data:{labels:lb,datasets:[
+    {label:'Added Copilot',data:top.map(r=>r.aCop),backgroundColor:'#0097a7',borderRadius:3},
+    {label:'Added Git',data:top.map(r=>r.aGit),backgroundColor:'#e67e22',borderRadius:3}
+  ]},options:co});
+  const tot=analyzedData.length,ff=analyzedData.filter(r=>r.ffinal).length,fa=analyzedData.filter(r=>r.fadded).length;
+  chartBreach=dc(chartBreach,'chartBreach',{type:'bar',data:{labels:['Final','Added'],datasets:[
+    {label:`Below ${pct}%`,data:[ff,fa],backgroundColor:'#c0392b',borderRadius:4},
+    {label:'Within',data:[tot-ff,tot-fa],backgroundColor:'#1a7a4a',borderRadius:4}
+  ]},options:{...co,scales:{x:{stacked:true},y:{stacked:true}}}});
+  const sc=analyzedData.filter(r=>r.fR!==null).map((r,i)=>({x:i+1,y:parseFloat(r.fR.toFixed(2)),f:r.ffinal}));
+  chartRatio=dc(chartRatio,'chartRatio',{type:'scatter',data:{datasets:[
+    {label:'Copilot%',data:sc,backgroundColor:sc.map(d=>d.f?'#c0392b':'#1a7a4a'),pointRadius:5},
+    {label:`Threshold (${pct}%)`,type:'line',data:[{x:0,y:pct},{x:sc.length+1,y:pct}],borderColor:'#e67e22',borderDash:[5,5],pointRadius:0,borderWidth:2}
+  ]},options:{...co,scales:{x:{title:{display:true,text:'Index'}},y:{min:0,title:{display:true,text:'Copilot%'}}}}});
+}
+
+function renderTable(){
+  const search=(document.getElementById('searchInput').value||'').toLowerCase();
+  const pct=parseFloat(document.getElementById('pctThreshold').value)||0;
+  let rows=analyzedData.filter(r=>{
+    if(search&&!(r.assocId+' '+r.name).toLowerCase().includes(search))return false;
+    if(currentTab==='fail-final')return r.ffinal;
+    if(currentTab==='fail-added')return r.fadded;
+    if(currentTab==='fail-both')return r.fboth;
+    return true;
+  });
+  document.getElementById('resultsTitleText').textContent=`Analysis Results — ${pct}% Threshold | ${rows.length} record(s)`;
+  const tbody=document.getElementById('tableBody');
+  if(!rows.length){tbody.innerHTML='';document.getElementById('tableEmpty').style.display='block';return;}
+  document.getElementById('tableEmpty').style.display='none';
+  tbody.innerHTML=rows.map(r=>{
+    const fr=r.fR!==null?r.fR.toFixed(2)+'%':'N/A';
+    const ar=r.aR!==null?r.aR.toFixed(2)+'%':'N/A';
+    const l=r.license.toLowerCase(),isY=l==='yes'||l==='true'||l==='1'||l==='y';
+    const licT=isY?`<span class="tag tp">Yes</span>`:`<span class="tag tf">No</span>`;
+    const stT=r.status.toLowerCase()==='active'?`<span class="tag tp">Active</span>`:`<span class="tag" style="background:#eee;color:#555">${r.status}</span>`;
+    const fL=r.fR===null?`<span class="tag" style="background:#eee;color:#555">N/A</span>`:Math.abs(r.fR-pct)<0.05?`<span class="tag tb2">Equal</span>`:r.fR>pct?`<span class="tag tp">Above</span>`:`<span class="tag tf">Below</span>`;
+    const aL=r.aR===null?`<span class="tag" style="background:#eee;color:#555">N/A</span>`:Math.abs(r.aR-pct)<0.05?`<span class="tag tb2">Equal</span>`:r.aR>pct?`<span class="tag tp">Above</span>`:`<span class="tag tf">Below</span>`;
+    const os=r.fboth?`<span class="tag tf">Both Below</span>`:r.ffinal||r.fadded?`<span class="tag tw2">Partial</span>`:`<span class="tag tp">Pass</span>`;
+    return`<tr>
+      <td style="font-family:var(--mo);font-weight:500;color:var(--bm)">${r.assocId}</td>
+      <td>${r.name}</td><td>${stT}</td><td>${licT}</td>
+      <td class="${r.fCop<0?'dn':'dp'}">${r.fCop}</td><td>${r.fGit}</td>
+      <td class="${r.ffinal?'dn':''}">${fr}</td><td>${fL}</td>
+      <td class="${r.aCop<r.aGit?'dn':'dp'}">${r.aCop}</td><td>${r.aGit}</td>
+      <td class="${r.fadded?'dn':''}">${ar}</td><td>${aL}</td><td>${os}</td>
+    </tr>`;
+  }).join('');
+}
+function switchTab(tab,btn){currentTab=tab;document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderTable();}
+
+/* ── TOWER PAGE ─────────────────────────────────────────────────── */
+/*
+ * The Tower page reads directly from allData using columnMap — exactly
+ * the same approach as the Analysis page. No autoMap, no guessing.
+ * If a column isn't mapped (optional), that metric defaults to 0.
+ */
+function g(row,key){ // safe getter: returns numeric 0 or string '' if column unmapped
+  if(!columnMap[key]) return undefined;
+  return row[columnMap[key]];
+}
+function gn(row,key){ return parseFloat(g(row,key))||0; }
+function gs(row,key,def){ return columnMap[key]?String(row[columnMap[key]]||def).trim():def; }
+
+const DISP_CATS=[
+  'No Copilot License',
+  'Low user (Interaction 0-5)',
+  'Average user (Interaction 6-50 and Copilot Added Lines <100)',
+  'Average user (Interaction 6-50 and Copilot Added Lines 100-500)',
+  'Average user (Interaction 6-50 and Copilot Added Lines >500)',
+  'Power user (Interaction >50 and Copilot Added Lines <100)',
+  'Power user (Interaction >50 and Copilot Added Lines 100-500)',
+  'Power user (Interaction >50 and Copilot Added Lines >500)',
+  'No match',
+];
+const DISP_COLORS=['#9c27b0','#ef6c00','#1e88e5','#1565c0','#0d47a1','#2e7d32','#1b5e20','#00695c','#9e9e9e'];
+const DISP_CSS=['cn','cl','ca','ca','ca','cp','cp','cp','cm2'];
+
+function dispCat(r){
+  const l=r.license.toLowerCase();
+  const hasLic=l==='yes'||l==='true'||l==='1'||l==='y';
+  if(!hasLic) return'No Copilot License';
+  const ci=r.interactions,la=r.linesAdded;
+  if(ci>=0&&ci<=5) return'Low user (Interaction 0-5)';
+  if(ci>=6&&ci<=50&&la<100)   return'Average user (Interaction 6-50 and Copilot Added Lines <100)';
+  if(ci>=6&&ci<=50&&la<=500)  return'Average user (Interaction 6-50 and Copilot Added Lines 100-500)';
+  if(ci>=6&&ci<=50&&la>500)   return'Average user (Interaction 6-50 and Copilot Added Lines >500)';
+  if(ci>50&&la<100)  return'Power user (Interaction >50 and Copilot Added Lines <100)';
+  if(ci>50&&la<=500) return'Power user (Interaction >50 and Copilot Added Lines 100-500)';
+  if(ci>50&&la>500)  return'Power user (Interaction >50 and Copilot Added Lines >500)';
+  return'No match';
+}
+
+function avg(arr){return arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:0;}
+function f2(v){return isNaN(v)||v===null||v===undefined?'0.00':Number(v).toFixed(2);}
+// keep f1 as alias for backwards compat in analysis table ratios
+function f1(v){return f2(v);}
+
+/* ── DYNAMIC DROPDOWNS ──────────────────────────────────────────── */
+function populateDynamicDropdowns(){
+  // Get unique values from each column
+  function getUnique(key){
+    if(!columnMap[key]) return [];
+    const vals=new Set();
+    allData.forEach(row=>{
+      const v=String(row[columnMap[key]]||'').trim();
+      if(v) vals.add(v);
+    });
+    return [...vals].sort();
+  }
+  const statuses=getUnique('finalStatus');
+  const gitlabs=getUnique('gitlabActive');
+
+  function buildOpts(vals){
+    return '<option value="All" selected>All</option>'+vals.map(v=>`<option value="${v}">${v}</option>`).join('');
+  }
+
+  ['tw-status','tm-status'].forEach(id=>{ document.getElementById(id).innerHTML=buildOpts(statuses); });
+  ['tw-gitlab','tm-gitlab'].forEach(id=>{ document.getElementById(id).innerHTML=buildOpts(gitlabs); });
+}
+
+function renderTower(){
+  if(!allData.length||!columnMap.assocId){
+    showTowerEmpty('Upload data and click Apply & Analyze first');
+    return;
+  }
+
+  // Read filters
+  const fs=document.getElementById('tw-status').value;
+  const fl=document.getElementById('tw-license').value;
+  const fg=document.getElementById('tw-gitlab').value;
+
+  // Build tower rows directly from allData using columnMap
+  const filtered=allData.map(row=>{
+    const assocId=String(col(row,'assocId')||'').trim();
+    if(!assocId) return null;
+    const name        = gs(row,'name','');
+    const actPct      = gs(row,'actPct','');
+    const status      = gs(row,'finalStatus','Active');
+    const license     = gs(row,'hasLicense','Yes');
+    const gitlabActive= gs(row,'gitlabActive','Yes');
+    const tower       = gs(row,'tower','Unknown')||'Unknown';
+    const interactions= gn(row,'interactions');
+    const usage       = gn(row,'usage');
+    const linesAdded  = gn(row,'linesAdded');
+    const linesDeleted= gn(row,'linesDeleted');
+    const addedLines  = gn(row,'addedLines');
+    const deletedLines= gn(row,'deletedLines');
+    const gitCommits  = gn(row,'gitCommits');
+    return{assocId,name,actPct,status,license,gitlabActive,tower,
+           interactions,usage,linesAdded,linesDeleted,
+           addedLines,deletedLines,gitCommits,
+           copilotFinal:linesAdded-linesDeleted,
+           gitFinal:addedLines-deletedLines};
+  }).filter(r=>{
+    if(!r) return false;
+    // Direct string comparison against exact values from the dropdown (populated from Excel)
+    if(fs!=='All'&&columnMap.finalStatus&&r.status!==fs) return false;
+    if(fl!=='All'&&columnMap.hasLicense){
+      const y=['yes','true','1','y'].includes(r.license.toLowerCase());
+      if(fl==='Yes'&&!y) return false;
+      if(fl==='No'&&y) return false;
+    }
+    if(fg!=='All'&&columnMap.gitlabActive&&r.gitlabActive!==fg) return false;
+    return true;
+  });
+
+  if(!filtered.length){
+    showTowerEmpty('No records match the current filters — try setting filters to "All"');
+    return;
+  }
+
+  // Group by tower
+  const byTower={};
+  filtered.forEach(r=>{
+    if(!byTower[r.tower]) byTower[r.tower]=[];
+    byTower[r.tower].push(r);
+  });
+  const towers=Object.keys(byTower).sort();
+
+  // Render table
+  document.getElementById('towerEmpty').style.display='none';
+  towerRows=towers.map(tw=>{
+    const g=byTower[tw];
+    return{tower:tw,count:g.length,
+      avgInt:avg(g.map(r=>r.interactions)),
+      avgUse:avg(g.map(r=>r.usage)),
+      avgCopAdd:avg(g.map(r=>r.linesAdded)),
+      avgCopFin:avg(g.map(r=>r.copilotFinal)),
+      avgCommit:avg(g.map(r=>r.gitCommits)),
+      avgGitAdd:avg(g.map(r=>r.addedLines)),
+      avgGitFin:avg(g.map(r=>r.gitFinal)),
+    };
+  });
+
+  // Grand total row
+  const gt={
+    tower:'Grand Total',count:filtered.length,
+    avgInt:avg(filtered.map(r=>r.interactions)),
+    avgUse:avg(filtered.map(r=>r.usage)),
+    avgCopAdd:avg(filtered.map(r=>r.linesAdded)),
+    avgCopFin:avg(filtered.map(r=>r.copilotFinal)),
+    avgCommit:avg(filtered.map(r=>r.gitCommits)),
+    avgGitAdd:avg(filtered.map(r=>r.addedLines)),
+    avgGitFin:avg(filtered.map(r=>r.gitFinal)),
+  };
+
+  const gtRow=`<tr style="background:#f0f3f8;font-weight:600;border-top:2px solid var(--bo)">
+    <td style="color:var(--b)">&#931; Grand Total / Avg</td>
+    <td class="tower-num">${gt.count}</td>
+    <td class="tower-num" title="Overall average across all associates">${f1(gt.avgInt)}</td>
+    <td class="tower-num" title="Overall average across all associates">${f1(gt.avgUse)}</td>
+    <td class="tower-num" title="Overall average across all associates">${f1(gt.avgCopAdd)}</td>
+    <td class="tower-num" title="Overall average across all associates">${f1(gt.avgCopFin)}</td>
+    <td class="tower-num" title="Overall average across all associates">${f1(gt.avgCommit)}</td>
+    <td class="tower-num" title="Overall average across all associates">${f1(gt.avgGitAdd)}</td>
+    <td class="tower-num" title="Overall average across all associates">${f1(gt.avgGitFin)}</td>
+  </tr>`;
+
+  // Store raw data for drill-down (keyed by tower name)
+  window._towerRawData = byTower;
+  window._towerPage = 'tower';
+
+  document.getElementById('towerBody').innerHTML=towerRows.map(r=>{
+    const tw=encodeURIComponent(r.tower);
+    return`<tr>
+    <td style="font-weight:600;color:var(--b)">${r.tower}</td>
+    <td class="tower-num"><span class="num-link" onclick="openDrill('tower','${tw}','Associates','all')">${r.count}</span></td>
+    <td class="tower-num"><span class="num-link" onclick="openDrill('tower','${tw}','Avg Copilot Interactions','interactions')">${f1(r.avgInt)}</span></td>
+    <td class="tower-num"><span class="num-link" onclick="openDrill('tower','${tw}','Avg Copilot Usage','usage')">${f1(r.avgUse)}</span></td>
+    <td class="tower-num"><span class="num-link" onclick="openDrill('tower','${tw}','Copilot Added Lines','linesAdded')">${f1(r.avgCopAdd)}</span></td>
+    <td class="tower-num"><span class="num-link" onclick="openDrill('tower','${tw}','Copilot Final Lines','copilotFinal')">${f1(r.avgCopFin)}</span></td>
+    <td class="tower-num"><span class="num-link" onclick="openDrill('tower','${tw}','GitLab Commits','gitCommits')">${f1(r.avgCommit)}</span></td>
+    <td class="tower-num"><span class="num-link" onclick="openDrill('tower','${tw}','Git Added Lines','addedLines')">${f1(r.avgGitAdd)}</span></td>
+    <td class="tower-num"><span class="num-link" onclick="openDrill('tower','${tw}','Git Final Lines','gitFinal')">${f1(r.avgGitFin)}</span></td>
+  </tr>`;}).join('')+gtRow;
+
+  renderDisposition(byTower,towers,filtered);
+  generateInsights('tower',towerRows,gt);
+}
+
+function showTowerEmpty(msg){
+  document.getElementById('towerBody').innerHTML='';
+  const el=document.getElementById('towerEmpty');
+  el.style.display='block';
+  el.querySelector('.empty-txt').textContent=msg;
+  document.getElementById('dispContent').innerHTML=`<div class="empty" style="padding:40px"><div class="empty-ico">&#128203;</div><div class="empty-txt">${msg}</div></div>`;
+}
+
+function renderDisposition(byTower,towers,allRows){
+  const towerDisp={};
+  const dispCount={};
+  DISP_CATS.forEach(c=>{dispCount[c]={};towers.forEach(tw=>{dispCount[c][tw]=0;});});
+
+  towers.forEach(tw=>{
+    towerDisp[tw]={};
+    byTower[tw].forEach(r=>{
+      const cat=dispCat(r);
+      towerDisp[tw][cat]=(towerDisp[tw][cat]||0)+1;
+      if(dispCount[cat]) dispCount[cat][tw]=(dispCount[cat][tw]||0)+1;
+    });
+  });
+
+  // Cards
+  document.getElementById('dispContent').innerHTML='<div class="disp-grid">'+towers.map(tw=>{
+    const cats=towerDisp[tw],total=byTower[tw].length;
+    const twE=encodeURIComponent(tw);
+    const catRows=DISP_CATS.filter(c=>cats[c]>0).map(c=>{
+      const ci=DISP_CATS.indexOf(c);
+      const catE=encodeURIComponent(c);
+      const label=c.includes('(')?`<span class="tag ${DISP_CSS[ci]||'cm2'}" style="font-size:10px;margin-right:6px">${c.split(' (')[0]}</span>${c.substring(c.indexOf('('))}`:c;
+      return`<div class="disp-row"><span class="disp-label">${label}</span><span class="disp-val"><span class="num-link" onclick="openDispDrill('tower','${twE}','${catE}')">${cats[c]}</span> <span style="font-size:11px;color:var(--gt);font-weight:400">(${((cats[c]/total)*100).toFixed(0)}%)</span></span></div>`;
+    }).join('');
+    return`<div class="disp-card"><div class="disp-card-hdr">&#127959; ${tw} <span style="font-size:12px;color:var(--gt);font-weight:400;margin-left:8px">${total} associates</span></div>${catRows||'<div class="disp-row"><span class="disp-label" style="color:var(--gt)">No data</span></div>'}</div>`;
+  }).join('')+'</div>';
+
+  // Chart removed — Disposition Distribution by Tower section deleted
+}
+
+/* ── TOWER SUMMARY METRICS (Page 3) ────────────────────────────── */
+/*
+ * Rules:
+ *  - Copilot metrics (Interactions, Usage, Added Lines, Final Lines)
+ *    are averaged only over rows where Has Copilot License = Yes
+ *  - Git metrics (Commits, Added Lines, Final Lines) use ALL rows
+ *  - Has Copilot License = count of rows with license = Yes
+ *  - Low/Average/Power User counts based on dispCat() — same formula
+ */
+let metricsRows=[];
+
+
+function isYes(v){
+  return ['yes','true','1','y'].includes(String(v||'').toLowerCase().trim());
+}
+
+function renderMetrics(){
+  if(!allData.length||!columnMap.assocId){
+    showMetricsEmpty('Upload data and click Apply & Analyze first');
+    return;
+  }
+  const fs=document.getElementById('tm-status').value;
+  const fg=document.getElementById('tm-gitlab').value;
+
+  // Parse every row
+  const parsed=allData.map(row=>{
+    const assocId=String(col(row,'assocId')||'').trim();
+    if(!assocId) return null;
+    const name        =gs(row,'name','');
+    const actPct      =gs(row,'actPct','');
+    const status      =gs(row,'finalStatus','Active');
+    const license     =gs(row,'hasLicense','Yes');
+    const gitlabActive=gs(row,'gitlabActive','Yes');
+    const tower       =gs(row,'tower','Unknown')||'Unknown';
+    const interactions=gn(row,'interactions');
+    const usage       =gn(row,'usage');
+    const linesAdded  =gn(row,'linesAdded');
+    const linesDeleted=gn(row,'linesDeleted');
+    const addedLines  =gn(row,'addedLines');
+    const deletedLines=gn(row,'deletedLines');
+    const gitCommits  =gn(row,'gitCommits');
+    const hasLic      =isYes(license);
+    return{assocId,name,actPct,status,license,gitlabActive,tower,hasLic,
+           interactions,usage,linesAdded,linesDeleted,
+           addedLines,deletedLines,gitCommits,
+           copilotFinal:linesAdded-linesDeleted,
+           gitFinal:addedLines-deletedLines};
+  }).filter(r=>{
+    if(!r) return false;
+    if(fs!=='All'&&columnMap.finalStatus&&r.status!==fs) return false;
+    if(fg!=='All'&&columnMap.gitlabActive&&r.gitlabActive!==fg) return false;
+    return true;
+  });
+
+  if(!parsed.length){
+    showMetricsEmpty('No records match the current filters — try setting filters to "All"');
+    return;
+  }
+
+  // Group by tower
+  const byTower={};
+  parsed.forEach(r=>{ if(!byTower[r.tower]) byTower[r.tower]=[]; byTower[r.tower].push(r); });
+  const towers=Object.keys(byTower).sort();
+
+  document.getElementById('metricsEmpty').style.display='none';
+
+  metricsRows=towers.map(tw=>{
+    const g=byTower[tw];
+    // Copilot metrics: only licensed associates
+    const licOnly=g.filter(r=>r.hasLic);
+    // Git metrics: all associates
+    // Disposition counts
+    let low=0,average=0,power=0;
+    g.forEach(r=>{
+      const cat=dispCat(r);
+      if(cat.startsWith('Low')) low++;
+      else if(cat.startsWith('Average')) average++;
+      else if(cat.startsWith('Power')) power++;
+    });
+    return{
+      tower:tw,
+      count:g.length,
+      licCount:licOnly.length,
+      // Copilot avgs — licensed only
+      avgInt:  avg(licOnly.map(r=>r.interactions)),
+      avgUse:  avg(licOnly.map(r=>r.usage)),
+      avgCopAdd:avg(licOnly.map(r=>r.linesAdded)),
+      avgCopFin:avg(licOnly.map(r=>r.copilotFinal)),
+      // Git avgs — all
+      avgCommit:avg(g.map(r=>r.gitCommits)),
+      avgGitAdd:avg(g.map(r=>r.addedLines)),
+      avgGitFin:avg(g.map(r=>r.gitFinal)),
+      low,average,power,
+    };
+  });
+
+  // Store raw data for drill-down
+  window._metricsRawData = byTower;
+  window._metricsPage = 'metrics';
+
+  document.getElementById('metricsBody').innerHTML=metricsRows.map(r=>{
+    const tw=encodeURIComponent(r.tower);
+    return`<tr>
+    <td style="font-weight:600;color:var(--b)">${r.tower}</td>
+    <td class="tower-num"><span class="num-link" onclick="openDrill('metrics','${tw}','Associates','all')">${r.count}</span></td>
+    <td class="tower-num"><span class="num-link" onclick="openDrill('metrics','${tw}','Has Copilot License','licOnly')">${r.licCount}</span></td>
+    <td class="tower-num"><span class="num-link" onclick="openDrill('metrics','${tw}','Copilot Interactions','interactions')">${f1(r.avgInt)}</span></td>
+    <td class="tower-num"><span class="num-link" onclick="openDrill('metrics','${tw}','Copilot Usage','usage')">${f1(r.avgUse)}</span></td>
+    <td class="tower-num"><span class="num-link" onclick="openDrill('metrics','${tw}','Copilot Added Lines','linesAdded')">${f1(r.avgCopAdd)}</span></td>
+    <td class="tower-num"><span class="num-link" onclick="openDrill('metrics','${tw}','Copilot Final Lines','copilotFinal')">${f1(r.avgCopFin)}</span></td>
+    <td class="tower-num"><span class="num-link" onclick="openDrill('metrics','${tw}','GitLab Commits','gitCommits')">${f1(r.avgCommit)}</span></td>
+    <td class="tower-num"><span class="num-link" onclick="openDrill('metrics','${tw}','Git Added Lines','addedLines')">${f1(r.avgGitAdd)}</span></td>
+    <td class="tower-num"><span class="num-link" onclick="openDrill('metrics','${tw}','Git Final Lines','gitFinal')">${f1(r.avgGitFin)}</span></td>
+    <td class="tower-num"><span class="num-link" onclick="openDrill('metrics','${tw}','Low Users','low')">${r.low}</span></td>
+    <td class="tower-num"><span class="num-link" onclick="openDrill('metrics','${tw}','Average Users','average')">${r.average}</span></td>
+    <td class="tower-num"><span class="num-link" onclick="openDrill('metrics','${tw}','Power Users','power')">${r.power}</span></td>
+  </tr>`;}).join('');
+
+  // Grand Total row for metrics
+  const allLicOnly=parsed.filter(r=>r.hasLic);
+  let gtLow=0,gtAvg=0,gtPow=0;
+  parsed.forEach(r=>{
+    const cat=dispCat(r);
+    if(cat.startsWith('Low')) gtLow++;
+    else if(cat.startsWith('Average')) gtAvg++;
+    else if(cat.startsWith('Power')) gtPow++;
+  });
+  const gtm={
+    count:parsed.length, licCount:allLicOnly.length,
+    avgInt:avg(allLicOnly.map(r=>r.interactions)),
+    avgUse:avg(allLicOnly.map(r=>r.usage)),
+    avgCopAdd:avg(allLicOnly.map(r=>r.linesAdded)),
+    avgCopFin:avg(allLicOnly.map(r=>r.copilotFinal)),
+    avgCommit:avg(parsed.map(r=>r.gitCommits)),
+    avgGitAdd:avg(parsed.map(r=>r.addedLines)),
+    avgGitFin:avg(parsed.map(r=>r.gitFinal)),
+    low:gtLow, average:gtAvg, power:gtPow,
+  };
+  document.getElementById('metricsBody').innerHTML+=`<tr style="background:#f0f3f8;font-weight:600;border-top:2px solid var(--bo)">
+    <td style="color:var(--b)">&#931; Grand Total / Avg</td>
+    <td class="tower-num">${gtm.count}</td>
+    <td class="tower-num">${gtm.licCount}</td>
+    <td class="tower-num" title="Avg of licensed associates only">${f1(gtm.avgInt)}</td>
+    <td class="tower-num" title="Avg of licensed associates only">${f1(gtm.avgUse)}</td>
+    <td class="tower-num" title="Avg of licensed associates only">${f1(gtm.avgCopAdd)}</td>
+    <td class="tower-num" title="Avg of licensed associates only">${f1(gtm.avgCopFin)}</td>
+    <td class="tower-num" title="Avg across all associates">${f1(gtm.avgCommit)}</td>
+    <td class="tower-num" title="Avg across all associates">${f1(gtm.avgGitAdd)}</td>
+    <td class="tower-num" title="Avg across all associates">${f1(gtm.avgGitFin)}</td>
+    <td class="tower-num"><span class="tag cl">${gtm.low}</span></td>
+    <td class="tower-num"><span class="tag ca">${gtm.average}</span></td>
+    <td class="tower-num"><span class="tag cp">${gtm.power}</span></td>
+  </tr>`;
+
+  renderMetricsDisposition(byTower,towers);
+  generateInsights('metrics',metricsRows,gtm);
+}
+
+function showMetricsEmpty(msg){
+  document.getElementById('metricsBody').innerHTML='';
+  const el=document.getElementById('metricsEmpty');
+  el.style.display='block';
+  el.querySelector('.empty-txt').textContent=msg;
+  document.getElementById('metricsDispContent').innerHTML=`<div class="empty" style="padding:40px"><div class="empty-ico">&#128203;</div><div class="empty-txt">${msg}</div></div>`;
+}
+
+function renderMetricsDisposition(byTower,towers){
+  const towerDisp={};
+  const dispCount={};
+  DISP_CATS.forEach(c=>{dispCount[c]={};towers.forEach(tw=>{dispCount[c][tw]=0;});});
+
+  towers.forEach(tw=>{
+    towerDisp[tw]={};
+    byTower[tw].forEach(r=>{
+      const cat=dispCat(r);
+      towerDisp[tw][cat]=(towerDisp[tw][cat]||0)+1;
+      if(dispCount[cat]) dispCount[cat][tw]=(dispCount[cat][tw]||0)+1;
+    });
+  });
+
+  document.getElementById('metricsDispContent').innerHTML='<div class="disp-grid">'+towers.map(tw=>{
+    const cats=towerDisp[tw],total=byTower[tw].length;
+    const twE=encodeURIComponent(tw);
+    const catRows=DISP_CATS.filter(c=>cats[c]>0).map(c=>{
+      const ci=DISP_CATS.indexOf(c);
+      const catE=encodeURIComponent(c);
+      const label=c.includes('(')?`<span class="tag ${DISP_CSS[ci]||'cm2'}" style="font-size:10px;margin-right:6px">${c.split(' (')[0]}</span>${c.substring(c.indexOf('('))}`:c;
+      return`<div class="disp-row"><span class="disp-label">${label}</span><span class="disp-val"><span class="num-link" onclick="openDispDrill('metrics','${twE}','${catE}')">${cats[c]}</span> <span style="font-size:11px;color:var(--gt);font-weight:400">(${((cats[c]/total)*100).toFixed(0)}%)</span></span></div>`;
+    }).join('');
+    return`<div class="disp-card"><div class="disp-card-hdr">&#127959; ${tw} <span style="font-size:12px;color:var(--gt);font-weight:400;margin-left:8px">${total} associates</span></div>${catRows||'<div class="disp-row"><span class="disp-label" style="color:var(--gt)">No data</span></div>'}</div>`;
+  }).join('')+'</div>';
+
+  // Chart removed — Disposition Distribution by Tower section deleted
+}
+
+function downloadMetricsCSV(){
+  if(!metricsRows.length) return;
+  dlCSV([['Tower','Associates','Has Copilot License','Copilot Interactions','Copilot Usage','Copilot Added Lines','Copilot Final Lines','GitLab Commits','Git Added Lines','Git Final Lines','Low User','Average User','Power User'],
+    ...metricsRows.map(r=>[r.tower,r.count,r.licCount,f1(r.avgInt),f1(r.avgUse),f1(r.avgCopAdd),f1(r.avgCopFin),f1(r.avgCommit),f1(r.avgGitAdd),f1(r.avgGitFin),r.low,r.average,r.power])],
+    'CTS_Tower_Metrics.csv');
+}
+
+function downloadMetricsXLSX(){
+  if(!metricsRows.length) return;
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
+    ['Tower','Associates','Has Copilot License','Copilot Interactions','Copilot Usage','Copilot Added Lines','Copilot Final Lines','GitLab Commits','Git Added Lines','Git Final Lines','Low User','Average User','Power User'],
+    ...metricsRows.map(r=>[r.tower,r.count,r.licCount,parseFloat(f1(r.avgInt)),parseFloat(f1(r.avgUse)),parseFloat(f1(r.avgCopAdd)),parseFloat(f1(r.avgCopFin)),parseFloat(f1(r.avgCommit)),parseFloat(f1(r.avgGitAdd)),parseFloat(f1(r.avgGitFin)),r.low,r.average,r.power])
+  ]),'Tower Metrics');
+  XLSX.writeFile(wb,'CTS_Tower_Metrics.xlsx');
+  toast('Tower Metrics XLSX downloaded','success');
+}
+
+function downloadMetricsDispCSV(){
+  const rows=[['Tower','Category','Count','Percentage']];
+  document.querySelectorAll('#metricsDispContent .disp-card').forEach(card=>{
+    const tw=card.querySelector('.disp-card-hdr').childNodes[1]?.textContent?.trim()||'';
+    card.querySelectorAll('.disp-row').forEach(dr=>{
+      const lbl=dr.querySelector('.disp-label')?.textContent?.replace(/\s+/g,' ').trim()||'';
+      const val=dr.querySelector('.disp-val')?.childNodes[0]?.textContent?.trim()||'0';
+      const pct=dr.querySelector('.disp-val span')?.textContent?.replace(/[()%]/g,'').trim()||'0';
+      if(lbl) rows.push([tw,lbl,val,pct+'%']);
+    });
+  });
+  dlCSV(rows,'CTS_Metrics_Disposition.csv');
+}
+
+/* ── DRILL-DOWN POPUP ───────────────────────────────────────────── */
+let _drillRows = [];    // current popup rows for CSV download
+let _drillColLabel = '';
+
+function openDrill(page, towerEncoded, colLabel, colKey){
+  const tower = decodeURIComponent(towerEncoded);
+  const rawData = page === 'tower' ? window._towerRawData : window._metricsRawData;
+  if(!rawData) return;
+
+  // Get all associates for this tower
+  let rows = (rawData[tower] || []);
+
+  // For licOnly column in metrics page, filter to licensed only
+  if(colKey === 'licOnly') rows = rows.filter(r => r.hasLic);
+  // For Low/Average/Power disposition columns
+  if(colKey === 'low')     rows = rows.filter(r => dispCat(r).startsWith('Low'));
+  if(colKey === 'average') rows = rows.filter(r => dispCat(r).startsWith('Average'));
+  if(colKey === 'power')   rows = rows.filter(r => dispCat(r).startsWith('Power'));
+
+  _drillRows = rows;
+  _drillColLabel = colLabel;
+
+  document.getElementById('drillTitle').textContent = `${tower} — ${colLabel}`;
+  document.getElementById('drillSubtitle').textContent = `${rows.length} associate${rows.length!==1?'s':''} • Click any column header to sort`;
+
+  // Build table headers
+  const cols = [
+    {key:'assocId',     label:'Associate ID'},
+    {key:'name',        label:'Associate Name'},
+    {key:'actPct',      label:'ACT/PCT Mapping'},
+    {key:'linesAdded',  label:'Lines Added'},
+    {key:'linesDeleted',label:'Lines Deleted'},
+    {key:'usage',       label:'Copilot Usage'},
+    {key:'interactions',label:'Copilot Interactions'},
+    {key:'gitCommits',  label:'GitLab Commits'},
+    {key:'addedLines',  label:'Added Lines'},
+    {key:'deletedLines',label:'Deleted Lines'},
+  ];
+
+  let sortCol = null, sortAsc = true;
+
+  function renderDrillRows(data){
+    document.getElementById('drillBody').className = 'drill-body';
+    document.getElementById('drillBody').innerHTML = data.map(r=>`<tr>
+      <td style="font-family:var(--mo);font-weight:500;color:var(--bm)">${r.assocId}</td>
+      <td>${r.name||'—'}</td>
+      <td>${r.actPct||'—'}</td>
+      <td class="tower-num">${r.linesAdded}</td>
+      <td class="tower-num">${r.linesDeleted}</td>
+      <td class="tower-num">${r.usage}</td>
+      <td class="tower-num">${r.interactions}</td>
+      <td class="tower-num">${r.gitCommits}</td>
+      <td class="tower-num">${r.addedLines}</td>
+      <td class="tower-num">${r.deletedLines}</td>
+    </tr>`).join('') || '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--gt)">No associates</td></tr>';
+  }
+
+  const thead = document.getElementById('drillHead');
+  thead.className = 'drill-hdr';
+  thead.innerHTML = cols.map((c,i) => `<th style="cursor:pointer;user-select:none" onclick="sortDrill(${i},'${c.key}')">${c.label} <span id="dsort_${i}" style="font-size:10px;opacity:.5">⇅</span></th>`).join('');
+
+  window.sortDrill = function(idx, key){
+    const numeric = ['linesAdded','linesDeleted','usage','interactions','gitCommits','addedLines','deletedLines'].includes(key);
+    if(sortCol === key){ sortAsc = !sortAsc; } else { sortCol = key; sortAsc = true; }
+    // Reset all indicators
+    cols.forEach((_,i) => { const el=document.getElementById(`dsort_${i}`); if(el) el.textContent='⇅'; el.style.opacity='.5'; });
+    const ind = document.getElementById(`dsort_${idx}`);
+    if(ind){ ind.textContent = sortAsc ? '↑' : '↓'; ind.style.opacity='1'; }
+    const sorted = [..._drillRows].sort((a,b)=>{
+      const va = numeric ? (parseFloat(a[key])||0) : String(a[key]||'').toLowerCase();
+      const vb = numeric ? (parseFloat(b[key])||0) : String(b[key]||'').toLowerCase();
+      return sortAsc ? (va>vb?1:va<vb?-1:0) : (va<vb?1:va>vb?-1:0);
+    });
+    renderDrillRows(sorted);
+  };
+
+  renderDrillRows(rows);
+  document.getElementById('drillModal').classList.add('open');
+}
+
+function closeDrill(){
+  document.getElementById('drillModal').classList.remove('open');
+}
+
+/* Disposition-specific drill-down: filters associates by tower + category */
+function openDispDrill(page, towerEncoded, catEncoded){
+  const tower = decodeURIComponent(towerEncoded);
+  const cat   = decodeURIComponent(catEncoded);
+  const rawData = page === 'tower' ? window._towerRawData : window._metricsRawData;
+  if(!rawData) return;
+
+  // All associates in this tower matching this disposition category
+  const rows = (rawData[tower] || []).filter(r => dispCat(r) === cat);
+
+  _drillRows = rows;
+  _drillColLabel = `${tower} — ${cat}`;
+
+  document.getElementById('drillTitle').textContent = `${tower} — Disposition Detail`;
+  document.getElementById('drillSubtitle').textContent = `Category: ${cat} • ${rows.length} associate${rows.length!==1?'s':''} • Click column header to sort`;
+
+  // Disposition drill shows: Associate ID, Associate Name, ACT/PCT Mapping, Lines Added, Lines Deleted, Copilot Interactions
+  const cols = [
+    {key:'assocId',     label:'Associate ID'},
+    {key:'name',        label:'Associate Name'},
+    {key:'actPct',      label:'ACT/PCT Mapping'},
+    {key:'linesAdded',  label:'Lines Added'},
+    {key:'linesDeleted',label:'Lines Deleted'},
+    {key:'interactions',label:'Copilot Interactions'},
+  ];
+  const numericCols = ['linesAdded','linesDeleted','interactions'];
+
+  let sortCol=null, sortAsc=true;
+
+  function renderDispRows(data){
+    document.getElementById('drillBody').className='drill-body';
+    document.getElementById('drillBody').innerHTML=data.map(r=>`<tr>
+      <td style="font-family:var(--mo);font-weight:500;color:var(--bm)">${r.assocId}</td>
+      <td>${r.name||'—'}</td>
+      <td>${r.actPct||'—'}</td>
+      <td class="tower-num">${r.linesAdded}</td>
+      <td class="tower-num">${r.linesDeleted}</td>
+      <td class="tower-num">${r.interactions}</td>
+    </tr>`).join('')||'<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--gt)">No associates</td></tr>';
+  }
+
+  const thead=document.getElementById('drillHead');
+  thead.className='drill-hdr';
+  thead.innerHTML=cols.map((c,i)=>`<th style="cursor:pointer;user-select:none" onclick="sortDispDrill(${i},'${c.key}')">${c.label} <span id="ddsort_${i}" style="font-size:10px;opacity:.5">⇅</span></th>`).join('');
+
+  window.sortDispDrill=function(idx,key){
+    const numeric=numericCols.includes(key);
+    if(sortCol===key){sortAsc=!sortAsc;}else{sortCol=key;sortAsc=true;}
+    cols.forEach((_,i)=>{const el=document.getElementById(`ddsort_${i}`);if(el){el.textContent='⇅';el.style.opacity='.5';}});
+    const ind=document.getElementById(`ddsort_${idx}`);
+    if(ind){ind.textContent=sortAsc?'↑':'↓';ind.style.opacity='1';}
+    const sorted=[..._drillRows].sort((a,b)=>{
+      const va=numeric?(parseFloat(a[key])||0):String(a[key]||'').toLowerCase();
+      const vb=numeric?(parseFloat(b[key])||0):String(b[key]||'').toLowerCase();
+      return sortAsc?(va>vb?1:va<vb?-1:0):(va<vb?1:va>vb?-1:0);
+    });
+    renderDispRows(sorted);
+  };
+
+  renderDispRows(rows);
+  document.getElementById('drillModal').classList.add('open');
+}
+
+function downloadDrillCSV(){
+  if(!_drillRows.length) return;
+  // Check if this is a disposition drill (has category in label) by checking if columns are 6 or 10
+  // We detect by whether the modal header says "Disposition Detail"
+  const isDisp = document.getElementById('drillTitle').textContent.includes('Disposition Detail');
+  let hdr, rows;
+  if(isDisp){
+    hdr=['Associate ID','Associate Name','ACT/PCT Mapping','Lines Added','Lines Deleted','Copilot Interactions'];
+    rows=_drillRows.map(r=>[r.assocId,r.name||'',r.actPct||'',r.linesAdded,r.linesDeleted,r.interactions]);
+  } else {
+    hdr=['Associate ID','Associate Name','ACT/PCT Mapping','Lines Added','Lines Deleted','Copilot Usage','Copilot Interactions','GitLab Commits','Added Lines','Deleted Lines'];
+    rows=_drillRows.map(r=>[r.assocId,r.name||'',r.actPct||'',r.linesAdded,r.linesDeleted,r.usage,r.interactions,r.gitCommits,r.addedLines,r.deletedLines]);
+  }
+  const csv=[hdr,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download=`Drill_${_drillColLabel.replace(/[\s\/—]+/g,'_').replace(/[^a-zA-Z0-9_]/g,'')}.csv`;
+  a.click();
+  toast('Drill-down CSV downloaded','success');
+}
+
+/* ── AI INSIGHTS (Anthropic API) ─────────────────────────────────── */
+async function generateInsights(page, rows, grandTotal, forceRefresh=false){
+  const cardId = page==='tower' ? 'towerInsightsCard'  : 'metricsInsightsCard';
+  const bodyId = page==='tower' ? 'towerInsightsBody'  : 'metricsInsightsBody';
+  const card   = document.getElementById(cardId);
+  const bodyEl = document.getElementById(bodyId);
+  if(!card||!bodyEl) return;
+  card.style.display='block';
+  bodyEl.innerHTML='<div style="color:var(--gt);font-style:italic;display:flex;align-items:center;gap:8px">&#9696; Analysing data with AI...</div>';
+
+  const summary=rows.map(r=>{
+    if(page==='tower'){
+      return `Tower: ${r.tower} | Associates: ${r.count} | Avg Copilot Interactions: ${f1(r.avgInt)} | Avg Copilot Usage: ${f1(r.avgUse)} | Avg Copilot Added Lines: ${f1(r.avgCopAdd)} | Avg Copilot Final Lines: ${f1(r.avgCopFin)} | Avg GitLab Commits: ${f1(r.avgCommit)} | Avg Git Added Lines: ${f1(r.avgGitAdd)} | Avg Git Final Lines: ${f1(r.avgGitFin)}`;
+    } else {
+      return `Tower: ${r.tower} | Associates: ${r.count} | With Copilot License: ${r.licCount} | Avg Copilot Interactions (licensed only): ${f1(r.avgInt)} | Avg Copilot Usage: ${f1(r.avgUse)} | Avg Copilot Added Lines: ${f1(r.avgCopAdd)} | Avg Git Added Lines: ${f1(r.avgGitAdd)} | Low Users: ${r.low} | Average Users: ${r.average} | Power Users: ${r.power}`;
+    }
+  }).join('\n');
+
+  const prompt=page==='tower'
+    ? `You are a productivity analytics expert at CTS (Cognizant Technology Solutions). Analyse this Tower Summary data showing Copilot vs Git contribution averages by tower. Provide 5-7 concise, actionable bullet-point insights. Focus on: which towers lead or lag in Copilot adoption, Copilot vs Git utilisation gaps, and specific recommendations. Use "•" for bullets. Reference specific numbers.\n\nData:\n${summary}`
+    : `You are a productivity analytics expert at CTS (Cognizant Technology Solutions). Analyse this Tower Summary Metrics data. Copilot metrics are averaged over licensed associates only; Git metrics cover all. Provide 5-7 concise, actionable bullet-point insights on: licence utilisation efficiency, user tier distribution (Low/Average/Power) per tower, which towers need attention, and specific recommendations. Use "•" for bullets. Reference specific numbers.\n\nData:\n${summary}`;
+
+  try {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+    });
+    if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error?.message||`API ${res.status}`);}
+    const data=await res.json();
+    const text=(data.content||[]).find(b=>b.type==='text')?.text||'No insights generated.';
+    // Render bullets as styled rows
+    const html=text.split('\n').map(line=>{
+      const l=line.trim();
+      if(!l) return '';
+      if(/^[•\-\*]/.test(l)){
+        const content=l.replace(/^[•\-\*]\s*/,'');
+        return`<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #f0f3f8">
+          <span style="color:var(--ac);font-size:18px;line-height:1.2;flex-shrink:0">•</span>
+          <span>${content}</span></div>`;
+      }
+      if(l.length<80&&(l.endsWith(':') || /^[A-Z]/.test(l)&&!l.includes('.'))){
+        return`<div style="font-weight:600;color:var(--b);margin:12px 0 4px">${l}</div>`;
+      }
+      return`<p style="margin:6px 0;color:var(--gt)">${l}</p>`;
+    }).filter(Boolean).join('');
+    bodyEl.innerHTML=html||`<p>${text}</p>`;
+  } catch(e){
+    bodyEl.innerHTML=`<div style="color:var(--re);padding:12px;background:#fdecea;border-radius:var(--r)"><strong>Could not generate insights:</strong> ${e.message}</div>`;
+  }
+}
+
+function dlCSV(rows,fn){
+  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);a.download=fn;a.click();
+  toast(`${fn} downloaded`,'success');
+}
+function downloadCSV(){
+  if(!analyzedData.length) return;
+  const pct=document.getElementById('pctThreshold').value;
+  dlCSV([['Associate ID','Name','Status','License','Final Copilot','Final Git','Final Ratio%','Final','Added Copilot','Added Git','Added Ratio%','Added','Overall'],
+    ...analyzedData.map(r=>[r.assocId,r.name,r.status,r.license,r.fCop,r.fGit,
+      r.fR!==null?r.fR.toFixed(2):'N/A',r.ffinal?'Below':'OK',
+      r.aCop,r.aGit,r.aR!==null?r.aR.toFixed(2):'N/A',r.fadded?'Below':'OK',
+      r.fboth?'Both Below':r.ffinal||r.fadded?'Partial':'Pass'])],
+    `CTS_Analysis_${pct}pct.csv`);
+}
+function downloadXLSX(){
+  if(!analyzedData.length) return;
+  const pct=document.getElementById('pctThreshold').value;
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([['Associate ID','Name','Status','License','Final Copilot','Final Git','Final Ratio%','Final','Added Copilot','Added Git','Added Ratio%','Added','Overall'],
+    ...analyzedData.map(r=>[r.assocId,r.name,r.status,r.license,r.fCop,r.fGit,
+      r.fR!==null?parseFloat(r.fR.toFixed(2)):'N/A',r.ffinal?'Below':'OK',
+      r.aCop,r.aGit,r.aR!==null?parseFloat(r.aR.toFixed(2)):'N/A',r.fadded?'Below':'OK',
+      r.fboth?'Both Below':r.ffinal||r.fadded?'Partial':'Pass'])]);
+  XLSX.utils.book_append_sheet(wb,ws,'Analysis');
+  XLSX.writeFile(wb,`CTS_Analysis_${pct}pct.xlsx`);
+  toast('XLSX downloaded','success');
+}
+function downloadTowerCSV(){
+  if(!towerRows.length) return;
+  dlCSV([['Tower','Associates','Avg Copilot Interactions','Avg Copilot Usage','Copilot Added Lines','Copilot Final Lines','Avg GitLab Commits','Git Added Lines','Git Final Lines'],
+    ...towerRows.map(r=>[r.tower,r.count,f1(r.avgInt),f1(r.avgUse),f1(r.avgCopAdd),f1(r.avgCopFin),f1(r.avgCommit),f1(r.avgGitAdd),f1(r.avgGitFin)])],
+    'CTS_Tower_Summary.csv');
+}
+function downloadTowerXLSX(){
+  if(!towerRows.length) return;
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Tower','Associates','Avg Copilot Interactions','Avg Copilot Usage','Copilot Added Lines','Copilot Final Lines','Avg GitLab Commits','Git Added Lines','Git Final Lines'],
+    ...towerRows.map(r=>[r.tower,r.count,parseFloat(f1(r.avgInt)),parseFloat(f1(r.avgUse)),parseFloat(f1(r.avgCopAdd)),parseFloat(f1(r.avgCopFin)),parseFloat(f1(r.avgCommit)),parseFloat(f1(r.avgGitAdd)),parseFloat(f1(r.avgGitFin))])]),'Tower Summary');
+  XLSX.writeFile(wb,'CTS_Tower_Summary.xlsx');toast('Tower XLSX downloaded','success');
+}
+function downloadDispCSV(){
+  const rows=[['Tower','Category','Count','Percentage']];
+  document.querySelectorAll('.disp-card').forEach(card=>{
+    const tw=card.querySelector('.disp-card-hdr').childNodes[1]?.textContent?.trim()||'';
+    card.querySelectorAll('.disp-row').forEach(dr=>{
+      const lbl=dr.querySelector('.disp-label')?.textContent?.replace(/\s+/g,' ').trim()||'';
+      const val=dr.querySelector('.disp-val')?.childNodes[0]?.textContent?.trim()||'0';
+      const pct=dr.querySelector('.disp-val span')?.textContent?.replace(/[()%]/g,'').trim()||'0';
+      if(lbl) rows.push([tw,lbl,val,pct+'%']);
+    });
+  });
+  dlCSV(rows,'CTS_Disposition.csv');
+}
+
+/* ── MSAL + GRAPH EMAIL ─────────────────────────────────────────── */
+const MSAL_CFG={
+  auth:{clientId:'14d82eec-204b-4c2f-b7e8-296a70dab67e',authority:'https://login.microsoftonline.com/common',redirectUri:window.location.href.split('?')[0].split('#')[0]},
+  cache:{cacheLocation:'sessionStorage',storeAuthStateInCookie:false}
+};
+let msalInst=null,msalAccount=null;
+function getMsal(){if(!msalInst)msalInst=new msal.PublicClientApplication(MSAL_CFG);return msalInst;}
+async function msalSignIn(){
+  const btn=document.getElementById('btnMsalSignIn');btn.disabled=true;btn.textContent='Signing in...';
+  try{
+    const app=getMsal();await app.initialize();
+    const r=await app.loginPopup({scopes:['User.Read','Mail.Send'],prompt:'select_account'});
+    msalAccount=r.account;
+    document.getElementById('msalSignedInAs').textContent='✓ '+msalAccount.username;
+    document.getElementById('msalSignedInAs').style.display='inline';
+    btn.textContent='Signed in ✓';btn.style.background='var(--gr)';
+    document.getElementById('btnSendNow').disabled=false;
+    document.getElementById('emailFooterNote').textContent='Signed in as '+msalAccount.username;
+    toast('Signed in as '+msalAccount.username,'success');
+  }catch(e){btn.disabled=false;btn.textContent='Sign in with Microsoft';if(e.errorCode!=='user_cancelled')toast('Sign-in failed: '+(e.message||e.errorCode),'error',6000);}
+}
+async function getToken(){
+  const app=getMsal();
+  try{const s=await app.acquireTokenSilent({scopes:['User.Read','Mail.Send'],account:msalAccount});return s.accessToken;}
+  catch(e){const p=await app.acquireTokenPopup({scopes:['User.Read','Mail.Send'],account:msalAccount});return p.accessToken;}
+}
+async function sendOneEmail(token,to,subject,body){
+  const r=await fetch('https://graph.microsoft.com/v1.0/me/sendMail',{method:'POST',
+    headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({message:{subject,body:{contentType:'Text',content:body},toRecipients:[{emailAddress:{address:to}}]},saveToSentItems:true})});
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||`Graph ${r.status}`);}
+}
+function openEmailModal(){
+  const fails=analyzedData.filter(r=>r.ffinal||r.fadded);
+  const pct=document.getElementById('pctThreshold').value;
+  document.getElementById('recipientCount').textContent=fails.length;
+  document.getElementById('sendCount').textContent=fails.length;
+  document.getElementById('emailSubject').value=`[CTS] Your Copilot vs Git Productivity Report — ${pct}% Threshold`;
+  document.getElementById('recipientList').innerHTML=fails.map(r=>{
+    const em=`${r.assocId}@cognizant.com`;
+    return`<div class="ritem"><div><div style="font-weight:500">${r.name||r.assocId}</div><div class="remail">${em}</div></div><span class="tag ${r.fboth?'tf':'tw2'}">${r.fboth?'Both below':r.ffinal?'Final below':'Added below'}</span></div>`;
+  }).join('')||'<div class="ritem" style="color:var(--gt)">No flagged associates.</div>';
+  document.getElementById('emailModal').classList.add('open');
+}
+function closeEmailModal(){
+  document.getElementById('emailModal').classList.remove('open');
+  document.getElementById('emailStep1').style.display='block';
+  document.getElementById('emailStep2').style.display='none';
+  document.getElementById('progressBar').style.width='0%';
+  document.getElementById('emailStatusBox').style.display='none';
+  document.getElementById('sendLog').innerHTML='';
+  document.getElementById('btnSendNow').disabled=msalAccount?false:true;
+}
+function showEmailStatus(msg,type){
+  const b=document.getElementById('emailStatusBox');
+  const s={success:{bg:'#e8f5ee',bo:'#7dcfa0',co:'#145e38'},error:{bg:'#fdecea',bo:'#f5a0a0',co:'#a93226'},info:{bg:'#e8f4fd',bo:'#b3d9f5',co:'#0c5277'}}[type]||{};
+  b.style.cssText=`display:block;margin-top:12px;padding:12px 14px;border-radius:var(--r);font-size:13px;line-height:1.7;border:1px solid ${s.bo};background:${s.bg};color:${s.co}`;
+  b.innerHTML=msg;
+}
+async function sendViaGraph(){
+  if(!msalAccount){toast('Please sign in first','error');return;}
+  const fails=analyzedData.filter(r=>r.ffinal||r.fadded);
+  if(!fails.length){toast('No flagged recipients','error');return;}
+  const subj=document.getElementById('emailSubject').value.trim();
+  const pre=document.getElementById('emailBody').value.trim();
+  const pct=document.getElementById('pctThreshold').value;
+  document.getElementById('emailStep1').style.display='none';
+  document.getElementById('emailStep2').style.display='block';
+  document.getElementById('emailStatusBox').style.display='none';
+  document.getElementById('btnSendNow').disabled=true;
+  document.getElementById('sendLog').innerHTML='';
+  const pb=document.getElementById('progressBar'),pl=document.getElementById('sendProgressLabel'),log=document.getElementById('sendLog');
+  let sent=0,failed=0,token;
+  try{pl.textContent='Acquiring access token...';token=await getToken();}
+  catch(e){showEmailStatus('<strong>Auth failed.</strong> '+e.message,'error');document.getElementById('emailStep1').style.display='block';document.getElementById('emailStep2').style.display='none';document.getElementById('btnSendNow').disabled=false;return;}
+  for(let i=0;i<fails.length;i++){
+    const r=fails[i],to=`${r.assocId}@cognizant.com`;
+    const body=pre+'\n\n'+`--- Metrics (Threshold: ${pct}%) ---\n\n`+
+      `Final Copilot Net : ${r.fCop}  |  Final Git Net : ${r.fGit}\n`+
+      `Copilot % of Git  : ${r.fR!==null?r.fR.toFixed(2)+'%':'N/A'}\n`+
+      `Final Status      : ${r.fR===null?'N/A':r.fR>pct?'ABOVE ✓':r.fR===pct?'EQUAL':'BELOW ✗'}\n\n`+
+      `Added Copilot     : ${r.aCop}  |  Added Git : ${r.aGit}\n`+
+      `Copilot % of Git  : ${r.aR!==null?r.aR.toFixed(2)+'%':'N/A'}\n`+
+      `Added Status      : ${r.aR===null?'N/A':r.aR>pct?'ABOVE ✓':r.aR===pct?'EQUAL':'BELOW ✗'}\n\n`+
+      `Overall: ${r.fboth?'Both Below':r.ffinal||r.fadded?'Partial':'Pass'} | Status: ${r.status} | License: ${r.license}\n---`;
+    pl.textContent=`Sending ${i+1}/${fails.length}: ${to}`;
+    pb.style.width=Math.round(((i+.5)/fails.length)*100)+'%';
+    try{await sendOneEmail(token,to,subj,body);sent++;log.innerHTML+=`<span style="color:var(--gr)">✓ ${to}</span>\n`;}
+    catch(e){failed++;log.innerHTML+=`<span style="color:var(--re)">✗ ${to} — ${e.message}</span>\n`;}
+    log.scrollTop=log.scrollHeight;pb.style.width=Math.round(((i+1)/fails.length)*100)+'%';
+    await new Promise(r=>setTimeout(r,250));
+  }
+  pl.textContent=`Complete — ${sent} sent, ${failed} failed.`;
+  if(failed===0)showEmailStatus(`<strong>✓ All ${sent} email(s) sent.</strong>`,'success');
+  else showEmailStatus(`<strong>${sent} sent, ${failed} failed.</strong>`,'error');
+  document.getElementById('btnSendNow').disabled=false;
+}
+
+/* ── RESET ──────────────────────────────────────────────────────── */
+function confirmReset(){document.getElementById('confirmModal').classList.add('open');}
+function closeConfirm(){document.getElementById('confirmModal').classList.remove('open');}
+function doReset(){
+  closeConfirm();
+  allData=[];analyzedData=[];detectedColumns=[];loadedFileCount=0;towerRows=[];metricsRows=[];currentTab='all';
+  columnMap={assocId:'',name:'',linesAdded:'',linesDeleted:'',addedLines:'',deletedLines:'',finalStatus:'',hasLicense:'',tower:'',interactions:'',usage:'',gitCommits:'',gitlabActive:'',actPct:''};
+  document.getElementById('fileInput').value='';
+  document.getElementById('fileChips').innerHTML='';
+  document.getElementById('uploadDefault').style.display='block';
+  document.getElementById('uploadDone').style.display='none';
+  document.getElementById('uploadZone').classList.remove('has-data');
+  document.getElementById('colMapper').style.display='none';
+  document.getElementById('colMapGrid').innerHTML='';
+  document.getElementById('pctThreshold').value='60';
+  document.getElementById('filterStatus').value='Active';
+  document.getElementById('filterLicense').value='Yes';
+  document.getElementById('searchInput').value='';
+  document.getElementById('tw-status').value='All';
+  document.getElementById('tw-license').value='All';
+  document.getElementById('tw-gitlab').value='All';
+  document.getElementById('tm-status').value='All';
+  document.getElementById('tm-gitlab').value='All';
+  ['m-total','m-final','m-added','m-both'].forEach(id=>document.getElementById(id).textContent='—');
+  ['btnCSV','btnXLSX'].forEach(id=>document.getElementById(id).disabled=true);
+  [chartFinal,chartAdded,chartBreach,chartRatio].forEach(c=>{try{if(c)c.destroy();}catch{}});
+  chartFinal=chartAdded=chartBreach=chartRatio=null;
+  document.getElementById('chartsGrid').style.display='none';
+  document.querySelectorAll('.tbtn').forEach((b,i)=>b.classList.toggle('active',i===0));
+  document.getElementById('tableBody').innerHTML='';
+  document.getElementById('towerBody').innerHTML='';
+  document.getElementById('metricsBody').innerHTML='';
+  document.getElementById('dispContent').innerHTML='<div class="empty" style="padding:40px"><div class="empty-ico">&#128203;</div><div class="empty-txt">Disposition will appear after data is loaded</div></div>';
+  document.getElementById('metricsDispContent').innerHTML='<div class="empty" style="padding:40px"><div class="empty-ico">&#128203;</div><div class="empty-txt">Disposition will appear after data is loaded</div></div>';
+  document.getElementById('resultsSection').style.display='none';
+  document.getElementById('placeholderSection').style.display='block';
+  showTowerEmpty('Upload and map data to see tower summaries');
+  showMetricsEmpty('Upload and map data to see metrics');
+  toast('Dashboard reset','info');
+}
+
+/* ── DRAG/DROP ──────────────────────────────────────────────────── */
+function handleDragOver(e){e.preventDefault();document.getElementById('uploadZone').classList.add('dragging');}
+function handleDragLeave(){document.getElementById('uploadZone').classList.remove('dragging');}
+function handleDrop(e){e.preventDefault();handleDragLeave();handleFiles(e.dataTransfer.files);}
+</script>
+</body>
+</html>
