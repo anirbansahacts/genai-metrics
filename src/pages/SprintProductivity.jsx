@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import * as XLSX from 'xlsx'
 import { Chart, registerables } from 'chart.js'
 import './SprintProductivity.css'
+import { useTheme } from '../context/ThemeContext'
 
 Chart.register(...registerables)
 
@@ -46,10 +47,26 @@ const METRICS = [
   { key: '#GenAI Saved SP',    label: 'SavedSP', cls: 'cv-ssp', thCls: 'th-metric-ssp' },
   { key: '__prod__',           label: 'Prod%',   cls: 'cv-pct', thCls: 'th-metric-pct' },
 ]
-const CHART_OPTS = { backgroundColor: '#161B22', borderColor: '#30363D', borderWidth: 1, titleColor: '#E6EDF3', bodyColor: '#8B949E' }
-
 // ══════════════════════════════════════════════════════════════════════════
 export default function SprintProductivity() {
+  const { theme } = useTheme()
+
+  function getChartTheme() {
+    const dark = theme === 'dark'
+    return {
+      tooltip: {
+        backgroundColor: dark ? '#161B22' : '#FFFFFF',
+        borderColor:     dark ? '#30363D' : '#D0D7E2',
+        borderWidth: 1,
+        titleColor:      dark ? '#E6EDF3' : '#1A1F2E',
+        bodyColor:       dark ? '#8B949E' : '#5A6478',
+      },
+      grid:        dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)',
+      tickMuted:   dark ? '#6E7681' : '#8892A4',
+      tickNormal:  dark ? '#8B949E' : '#5A6478',
+      legendColor: dark ? '#8B949E' : '#5A6478',
+    }
+  }
 
   // ── React state ─────────────────────────────────────────────────────────
   const [activePage,        setActivePage]        = useState('dashboard')
@@ -128,7 +145,7 @@ export default function SprintProductivity() {
       updateAiScope()
       populateAiSprintScope()
     }
-  }, [dataVersion, activeSprint, activePage, adoptActiveSprint, loading]) // eslint-disable-line
+  }, [dataVersion, activeSprint, activePage, adoptActiveSprint, loading, theme]) // eslint-disable-line
 
   // ── Expose drill-toggle functions to window (called from injected HTML) ──
   useEffect(() => {
@@ -265,10 +282,10 @@ export default function SprintProductivity() {
       data: { labels: sprints, datasets: [{ label: 'Productivity %', data, backgroundColor: sprints.map((_, i) => COLORS[i % COLORS.length]), borderRadius: 5, borderSkipped: false }] },
       options: {
         responsive: true, maintainAspectRatio: false, layout: { padding: { top: 20 } },
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: v => v.raw + '%' }, ...CHART_OPTS } },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: v => v.raw + '%' }, ...getChartTheme().tooltip } },
         scales: {
-          y: { beginAtZero: true, max: Math.ceil(mx * 1.3), ticks: { callback: v => v + '%', color: '#6E7681', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { color: 'transparent' } },
-          x: { ticks: { color: '#8B949E', font: { size: 10 } }, grid: { display: false }, border: { color: 'transparent' } }
+          y: { beginAtZero: true, max: Math.ceil(mx * 1.3), ticks: { callback: v => v + '%', color: getChartTheme().tickMuted, font: { size: 10 } }, grid: { color: getChartTheme().grid }, border: { color: 'transparent' } },
+          x: { ticks: { color: getChartTheme().tickNormal, font: { size: 10 } }, grid: { display: false }, border: { color: 'transparent' } }
         }
       }
     })
@@ -289,10 +306,10 @@ export default function SprintProductivity() {
       type: 'bar', data: { labels: sprints, datasets },
       options: {
         responsive: true, maintainAspectRatio: false, layout: { padding: { top: 20 } },
-        plugins: { legend: { display: false }, tooltip: { ...CHART_OPTS } },
+        plugins: { legend: { display: false }, tooltip: { ...getChartTheme().tooltip } },
         scales: {
-          x: { ticks: { color: '#8B949E', font: { size: 10 } }, grid: { display: false }, border: { color: 'transparent' } },
-          y: { max: Math.ceil(mx * 1.2), ticks: { color: '#6E7681', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { color: 'transparent' } }
+          x: { ticks: { color: getChartTheme().tickNormal, font: { size: 10 } }, grid: { display: false }, border: { color: 'transparent' } },
+          y: { max: Math.ceil(mx * 1.2), ticks: { color: getChartTheme().tickMuted, font: { size: 10 } }, grid: { color: getChartTheme().grid }, border: { color: 'transparent' } }
         }
       }
     })
@@ -315,12 +332,12 @@ export default function SprintProductivity() {
       options: {
         responsive: true, maintainAspectRatio: false, indexAxis: 'y', layout: { padding: { right: 50 } },
         plugins: {
-          legend: { display: sprints.length > 1, labels: { color: '#8B949E', boxWidth: 9, font: { size: 10 } } },
-          tooltip: { callbacks: { label: v => v.raw + '%' }, ...CHART_OPTS }
+          legend: { display: sprints.length > 1, labels: { color: getChartTheme().legendColor, boxWidth: 9, font: { size: 10 } } },
+          tooltip: { callbacks: { label: v => v.raw + '%' }, ...getChartTheme().tooltip }
         },
         scales: {
-          x: { beginAtZero: true, max: Math.ceil(mx * 1.35), ticks: { callback: v => v + '%', color: '#6E7681', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { color: 'transparent' } },
-          y: { ticks: { color: '#8B949E', font: { size: 10 } }, grid: { display: false }, border: { color: 'transparent' } }
+          x: { beginAtZero: true, max: Math.ceil(mx * 1.35), ticks: { callback: v => v + '%', color: getChartTheme().tickMuted, font: { size: 10 } }, grid: { color: getChartTheme().grid }, border: { color: 'transparent' } },
+          y: { ticks: { color: getChartTheme().tickNormal, font: { size: 10 } }, grid: { display: false }, border: { color: 'transparent' } }
         }
       }
     })
@@ -544,10 +561,10 @@ export default function SprintProductivity() {
       type: 'line', data: { labels: sprints, datasets },
       options: {
         responsive: true, maintainAspectRatio: false, layout: { padding: { top: 16 } },
-        plugins: { legend: { display: towers.length > 1, labels: { color: '#8B949E', boxWidth: 9, font: { size: 10 } } }, tooltip: { callbacks: { label: v => `${v.dataset.label}: ${v.raw}%` }, ...CHART_OPTS } },
+        plugins: { legend: { display: towers.length > 1, labels: { color: getChartTheme().legendColor, boxWidth: 9, font: { size: 10 } } }, tooltip: { callbacks: { label: v => `${v.dataset.label}: ${v.raw}%` }, ...getChartTheme().tooltip } },
         scales: {
-          y: { beginAtZero: true, ticks: { callback: v => v + '%', color: '#6E7681', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { color: 'transparent' } },
-          x: { ticks: { color: '#8B949E', font: { size: 10 } }, grid: { display: false }, border: { color: 'transparent' } }
+          y: { beginAtZero: true, ticks: { callback: v => v + '%', color: getChartTheme().tickMuted, font: { size: 10 } }, grid: { color: getChartTheme().grid }, border: { color: 'transparent' } },
+          x: { ticks: { color: getChartTheme().tickNormal, font: { size: 10 } }, grid: { display: false }, border: { color: 'transparent' } }
         }
       }
     })
@@ -669,10 +686,10 @@ export default function SprintProductivity() {
       ]},
       options: {
         responsive: true, maintainAspectRatio: false, layout: { padding: { top: 16 } },
-        plugins: { legend: { display: true, labels: { color: '#8B949E', boxWidth: 9, font: { size: 10 } } }, tooltip: { callbacks: { label: v => `${v.dataset.label}: ${v.raw}%` }, ...CHART_OPTS } },
+        plugins: { legend: { display: true, labels: { color: getChartTheme().legendColor, boxWidth: 9, font: { size: 10 } } }, tooltip: { callbacks: { label: v => `${v.dataset.label}: ${v.raw}%` }, ...getChartTheme().tooltip } },
         scales: {
-          y: { beginAtZero: true, ticks: { callback: v => v + '%', color: '#6E7681', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { color: 'transparent' } },
-          x: { ticks: { color: '#8B949E', font: { size: 10 } }, grid: { display: false }, border: { color: 'transparent' } }
+          y: { beginAtZero: true, ticks: { callback: v => v + '%', color: getChartTheme().tickMuted, font: { size: 10 } }, grid: { color: getChartTheme().grid }, border: { color: 'transparent' } },
+          x: { ticks: { color: getChartTheme().tickNormal, font: { size: 10 } }, grid: { display: false }, border: { color: 'transparent' } }
         }
       }
     })

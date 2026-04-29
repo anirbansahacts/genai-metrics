@@ -97,23 +97,6 @@
 
 /* ── CSS variables for this component ── */
 .sp-root {
-  --bg: #0D1117;
-  --bg2: #161B22;
-  --bg3: #1C2128;
-  --bg4: #21262D;
-  --border: #30363D;
-  --border2: #3D444D;
-  --txt: #E6EDF3;
-  --txt2: #8B949E;
-  --txt3: #6E7681;
-  --accent: #39D98A;
-  --accent-dim: rgba(57,217,138,0.12);
-  --blue: #58A6FF;
-  --orange: #F0883E;
-  --pink: #FF7EB6;
-  --purple: #BC8CFF;
-  --yellow: #E3B341;
-  --red: #F85149;
   --radius: 10px;
   --radius-lg: 14px;
   --radius-xl: 20px;

@@ -4,12 +4,13 @@
   justify-content: space-between;
   padding: 0 1.25rem;
   height: 60px;
-  background: #0d1117;
-  border-bottom: 1px solid #21262d;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 100;
   flex-shrink: 0;
+  transition: background 0.2s, border-color 0.2s;
 }
 
 .navbar-left {
@@ -21,6 +22,7 @@
 .navbar-right {
   display: flex;
   align-items: center;
+  gap: 0.5rem;
 }
 
 .hamburger {
@@ -31,7 +33,7 @@
   height: 36px;
   border: none;
   background: transparent;
-  color: #8b949e;
+  color: var(--txt2);
   font-size: 1.25rem;
   border-radius: 6px;
   cursor: pointer;
@@ -40,21 +42,21 @@
 }
 
 .hamburger:hover {
-  color: #e6edf3;
-  background: #21262d;
+  color: var(--txt);
+  background: var(--bg4);
 }
 
 .navbar-brand {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #58a6ff;
+  color: var(--blue);
   text-decoration: none;
   white-space: nowrap;
   letter-spacing: 0.02em;
 }
 
 .navbar-brand:hover {
-  color: #79c0ff;
+  opacity: 0.85;
 }
 
 .upload-btn {
@@ -75,4 +77,23 @@
   background: #238636;
   color: #ffffff;
   border-color: #2ea043;
+}
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  font-size: 1.1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.theme-toggle:hover {
+  background: var(--bg4);
 }

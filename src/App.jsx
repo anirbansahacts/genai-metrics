@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Sidebar from './components/Sidebar'
+import { useTheme } from './context/ThemeContext'
 import Home from './pages/Home'
 import GenaiReports from './pages/GenaiReports'
 import CpiAnalytics from './pages/CpiAnalytics'
@@ -12,6 +13,7 @@ import BatchFlow from './pages/BatchFlow'
 import UploadPortal from './pages/UploadPortal'
 
 export default function App() {
+  const { theme, toggleTheme } = useTheme()
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768)
 
   function toggleSidebar() {
@@ -25,7 +27,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <Navbar onToggleSidebar={toggleSidebar} />
+      <Navbar onToggleSidebar={toggleSidebar} theme={theme} onToggleTheme={toggleTheme} />
       <div className="app-body">
         <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
         <main className="main-content">

@@ -1,9 +1,9 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import './Navbar.css'
 
-export default function Navbar({ onToggleSidebar }) {
+export default function Navbar({ onToggleSidebar, theme, onToggleTheme }) {
   const location = useLocation()
-  const showUploadPortal = location.pathname === '/genai-reports' || 
+  const showUploadPortal = location.pathname === '/genai-reports' ||
                           location.pathname.startsWith('/weekly-status') ||
                           location.pathname.startsWith('/sprint-productivity') ||
                           location.pathname.startsWith('/copilot-vs-git') ||
@@ -31,6 +31,14 @@ export default function Navbar({ onToggleSidebar }) {
             Upload Portal
           </NavLink>
         )}
+        <button
+          className="theme-toggle"
+          onClick={onToggleTheme}
+          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {theme === 'dark' ? '☀️' : '🌙'}
+        </button>
       </div>
     </nav>
   )

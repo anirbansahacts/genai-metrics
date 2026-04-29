@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Chart, registerables } from 'chart.js'
 import * as XLSX from 'xlsx'
 import './CopilotVsGit.css'
+import { useTheme } from '../context/ThemeContext'
 
 Chart.register(...registerables)
 
@@ -68,6 +69,24 @@ function dispCat(r) {
 }
 
 export default function CopilotVsGit() {
+  const { theme } = useTheme()
+
+  function getChartTheme() {
+    const dark = theme === 'dark'
+    return {
+      grid:       dark ? '#30363D' : 'rgba(0,0,0,0.08)',
+      tickColor:  dark ? '#8B949E' : '#5A6478',
+      legendColor: dark ? '#8B949E' : '#5A6478',
+      tooltip: {
+        backgroundColor: dark ? '#161B22' : '#FFFFFF',
+        borderColor:     dark ? '#30363D' : '#D0D7E2',
+        borderWidth: 1,
+        titleColor:      dark ? '#E6EDF3' : '#1A1F2E',
+        bodyColor:       dark ? '#8B949E' : '#5A6478',
+      },
+    }
+  }
+
   // ── FETCH STATE ────────────────────────────────────────────────
   const [fetchState, setFetchState]   = useState('loading')
   const [fetchError, setFetchError]   = useState('')
@@ -217,7 +236,7 @@ export default function CopilotVsGit() {
     if (!analyzedData.length) return
     updateCharts(analyzedData, pctThreshold)
     return () => destroyCharts()
-  }, [analyzedData, pctThreshold])
+  }, [analyzedData, pctThreshold, theme]) // eslint-disable-line
 
   // ── ANALYSIS ──────────────────────────────────────────────────
   function doRunAnalysis(data, pct, fs, fl) {
@@ -264,12 +283,13 @@ export default function CopilotVsGit() {
   function updateCharts(data, pct) {
     destroyCharts()
     if (!canvasFinalRef.current) return
+    const ct = getChartTheme()
     const top=data.slice(0,20), lb=top.map(r=>r.assocId||r.name||'?')
-    const grid = { color:'#30363D' }
+    const grid = { color: ct.grid }
     const co = {
       responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ position:'top', labels:{ font:{size:11}, color:'#8B949E' } } },
-      scales:{ x:{ ticks:{color:'#8B949E'}, grid }, y:{ ticks:{color:'#8B949E'}, grid } }
+      plugins:{ legend:{ position:'top', labels:{ font:{size:11}, color:ct.legendColor } }, tooltip:{ ...ct.tooltip } },
+      scales:{ x:{ ticks:{color:ct.tickColor}, grid }, y:{ ticks:{color:ct.tickColor}, grid } }
     }
     chartFinalRef.current = new Chart(canvasFinalRef.current, { type:'bar', data:{ labels:lb, datasets:[
       { label:'Final Copilot', data:top.map(r=>r.fCop), backgroundColor:'#58a6ff', borderRadius:3 },
@@ -291,8 +311,8 @@ export default function CopilotVsGit() {
       { label:`Threshold (${pct}%)`, type:'line', data:[{x:0,y:pct},{x:sc.length+1,y:pct}],
         borderColor:'#e3b341', borderDash:[5,5], pointRadius:0, borderWidth:2 },
     ]}, options:{ ...co, scales:{
-      x:{ ...co.scales.x, title:{display:true,text:'Index',color:'#8B949E'} },
-      y:{ ...co.scales.y, min:0, title:{display:true,text:'Copilot%',color:'#8B949E'} }
+      x:{ ...co.scales.x, title:{display:true,text:'Index',color:ct.tickColor} },
+      y:{ ...co.scales.y, min:0, title:{display:true,text:'Copilot%',color:ct.tickColor} }
     }} })
   }
 
@@ -708,7 +728,7 @@ export default function CopilotVsGit() {
             <span style={{fontSize:'18px'}}>🧠</span>
             <div className="rt">{title}</div>
           </div>
-          <button className="btn bo-btn" style={{color:'#fff',borderColor:'rgba(255,255,255,.3)',fontSize:'12px'}}
+          <button className="btn bo-btn" style={{color:'var(--on-header)',borderColor:'var(--on-header-muted)',fontSize:'12px'}}
             onClick={()=>generateInsights(page,rows,gt,setInsights)}>↺ Refresh</button>
         </div>
         <div className="insights-body">
@@ -804,8 +824,8 @@ export default function CopilotVsGit() {
               <div className="rh">
                 <div className="rt">Analysis Results — {pctThreshold}% Threshold | {tableRows.length} record(s)</div>
                 <div className="ra">
-                  <button className="btn bo-btn" style={{color:'#fff',borderColor:'rgba(255,255,255,.3)',fontSize:'12px'}} onClick={downloadCSV}>⬇ CSV</button>
-                  <button className="btn bo-btn" style={{color:'#fff',borderColor:'rgba(255,255,255,.3)',fontSize:'12px'}} onClick={downloadXLSX}>⬇ XLSX</button>
+                  <button className="btn bo-btn" style={{color:'var(--on-header)',borderColor:'var(--on-header-muted)',fontSize:'12px'}} onClick={downloadCSV}>⬇ CSV</button>
+                  <button className="btn bo-btn" style={{color:'var(--on-header)',borderColor:'var(--on-header-muted)',fontSize:'12px'}} onClick={downloadXLSX}>⬇ XLSX</button>
                 </div>
               </div>
               <div className="tbar">
@@ -883,7 +903,7 @@ export default function CopilotVsGit() {
             <div className="rh">
               <div className="rt">Tower Summary — Averages</div>
               <div className="ra">
-                <button className="btn bo-btn" style={{color:'#fff',borderColor:'rgba(255,255,255,.3)',fontSize:'12px'}} onClick={downloadTowerCSV}>⬇ CSV</button>
+                <button className="btn bo-btn" style={{color:'var(--on-header)',borderColor:'var(--on-header-muted)',fontSize:'12px'}} onClick={downloadTowerCSV}>⬇ CSV</button>
                 <button className="btn bt-btn" style={{fontSize:'12px'}} onClick={downloadTowerXLSX}>⬇ XLSX</button>
               </div>
             </div>
@@ -958,7 +978,7 @@ export default function CopilotVsGit() {
             <div className="rh">
               <div className="rt">Tower Summary — Averages</div>
               <div className="ra">
-                <button className="btn bo-btn" style={{color:'#fff',borderColor:'rgba(255,255,255,.3)',fontSize:'12px'}} onClick={downloadMetricsCSV}>⬇ CSV</button>
+                <button className="btn bo-btn" style={{color:'var(--on-header)',borderColor:'var(--on-header-muted)',fontSize:'12px'}} onClick={downloadMetricsCSV}>⬇ CSV</button>
                 <button className="btn bt-btn" style={{fontSize:'12px'}} onClick={downloadMetricsXLSX}>⬇ XLSX</button>
               </div>
             </div>
@@ -1032,10 +1052,10 @@ export default function CopilotVsGit() {
           <div className="mhdr">
             <div>
               <div className="mttl">{drillTitle}</div>
-              <div style={{fontSize:'12px',color:'rgba(255,255,255,.7)',marginTop:2}}>{drillSubtitle}</div>
+              <div style={{fontSize:'12px',color:'var(--on-header-muted)',marginTop:2}}>{drillSubtitle}</div>
             </div>
             <div style={{display:'flex',alignItems:'center',gap:10}}>
-              <button className="btn bo-btn" style={{color:'#fff',borderColor:'rgba(255,255,255,.3)',fontSize:'12px'}} onClick={downloadDrillCSV}>⬇ CSV</button>
+              <button className="btn bo-btn" style={{color:'var(--on-header)',borderColor:'var(--on-header-muted)',fontSize:'12px'}} onClick={downloadDrillCSV}>⬇ CSV</button>
               <button className="mclose" onClick={()=>setDrillOpen(false)}>✕</button>
             </div>
           </div>

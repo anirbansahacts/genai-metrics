@@ -2,16 +2,62 @@
   box-sizing: border-box;
 }
 
+/* ── Theme variables ───────────────────────────────────────────────────── */
+:root[data-theme="dark"] {
+  --bg:          #0D1117;
+  --bg2:         #161B22;
+  --bg3:         #1C2128;
+  --bg4:         #21262D;
+  --border:      #30363D;
+  --border2:     #3D444D;
+  --txt:         #E6EDF3;
+  --txt2:        #8B949E;
+  --txt3:        #6E7681;
+  --accent:      #39D98A;
+  --accent-dim:  rgba(57,217,138,0.12);
+  --blue:        #58A6FF;
+  --orange:      #F0883E;
+  --pink:        #FF7EB6;
+  --purple:      #BC8CFF;
+  --yellow:      #E3B341;
+  --red:         #F85149;
+  --card-bg:     #161B22;
+  --sidebar-bg:  #161B22;
+}
+
+:root[data-theme="light"] {
+  --bg:          #F4F6F9;
+  --bg2:         #FFFFFF;
+  --bg3:         #F0F3F8;
+  --bg4:         #E8ECF2;
+  --border:      #D0D7E2;
+  --border2:     #B8C2D4;
+  --txt:         #1A1F2E;
+  --txt2:        #5A6478;
+  --txt3:        #8892A4;
+  --accent:      #1A7A4A;
+  --accent-dim:  rgba(26,122,74,0.1);
+  --blue:        #0078D4;
+  --orange:      #E67E22;
+  --pink:        #D63384;
+  --purple:      #6A1B9A;
+  --yellow:      #B8860B;
+  --red:         #C0392B;
+  --card-bg:     #FFFFFF;
+  --sidebar-bg:  #FFFFFF;
+}
+
 html, body {
   margin: 0;
   padding: 0;
   height: 100%;
   overflow: hidden;
-  background: #0d1117;
-  color: #e6edf3;
+  background: var(--bg);
+  color: var(--txt);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
+  transition: background 0.2s, color 0.2s;
 }
 
 #root {
@@ -44,12 +90,12 @@ html, body {
 .placeholder-inner h1 {
   font-size: 1.75rem;
   font-weight: 700;
-  color: #e6edf3;
+  color: var(--txt);
   margin-bottom: 0.75rem;
 }
 
 .placeholder-inner p {
-  color: #8b949e;
+  color: var(--txt2);
   line-height: 1.6;
   margin-bottom: 1.5rem;
 }
@@ -60,7 +106,7 @@ html, body {
   background: rgba(56, 139, 253, 0.15);
   border: 1px solid #388bfd40;
   border-radius: 999px;
-  color: #58a6ff;
+  color: var(--blue);
   font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.05em;
@@ -81,4 +127,12 @@ html, body {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+}
+
+/* ── Scrollbar theming ─────────────────────────────────────────────────── */
+:root[data-theme="dark"] * {
+  scrollbar-color: #30363D transparent;
+}
+:root[data-theme="light"] * {
+  scrollbar-color: #B8C2D4 transparent;
 }

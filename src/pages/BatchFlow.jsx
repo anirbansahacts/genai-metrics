@@ -868,17 +868,17 @@ export default function BatchFlow() {
             <div className="scenario-info">
               <div className="scenario-title">{sc.label}</div>
               <div className="scenario-desc">
-                {sc.id === 0 && <span style={{ color: '#e3d2c4', fontWeight: 500 }}>{sc.desc}</span>}
-                {sc.id === 4 && <span style={{ color: '#b45309', fontWeight: 500 }}>{sc.desc}</span>}
+                {sc.id === 0 && <span style={{ color: 'var(--txt2)', fontWeight: 500 }}>{sc.desc}</span>}
+                {sc.id === 4 && <span style={{ color: 'var(--amber)', fontWeight: 500 }}>{sc.desc}</span>}
                 {sc.id !== 0 && sc.id !== 4 && sc.desc}
-                {sc.output && <div style={{ marginTop: 5, fontWeight: 600, color: '#3fb950' }}>Output: {sc.output}</div>}
-                {sc.hint   && <div style={{ fontSize: 12, fontWeight: 500, color: '#b45309', fontStyle: 'italic', marginTop: 4 }}>{sc.hint}</div>}
+                {sc.output && <div style={{ marginTop: 5, fontWeight: 600, color: 'var(--green-dark)' }}>Output: {sc.output}</div>}
+                {sc.hint   && <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--amber)', fontStyle: 'italic', marginTop: 4 }}>{sc.hint}</div>}
               </div>
               <div className="task-pills">
                 {sc.pills.map((p, i) => <span key={i} className={`task-pill ${p.cls}`}>{p.lbl}</span>)}
               </div>
             </div>
-            <button className="btn-info-toggle" style={{ width:36, height:36, borderRadius:'50%', background:'rgba(255,255,255,0.07)', border:'1px solid var(--border)', cursor:'pointer', fontSize:17, color:'var(--text-muted)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, transition:'background .2s' }}
+            <button className="btn-info-toggle" style={{ width:36, height:36, borderRadius:'50%', background:'var(--bg3)', border:'1px solid var(--border)', cursor:'pointer', fontSize:17, color:'var(--text-muted)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, transition:'background .2s' }}
               onClick={() => setShowInfoModal(true)} title="Jobs at a Glance">⚙️</button>
           </div>
           <div style={{ height: 16 }} />
