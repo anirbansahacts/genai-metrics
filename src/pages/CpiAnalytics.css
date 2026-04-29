@@ -1,0 +1,521 @@
+/* ============================================================
+   CPI Analytics — scoped styles
+   All colors use global CSS vars from index.css; no hardcoded colors.
+   ============================================================ */
+
+.cpi-root {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.5rem 2rem;
+}
+
+/* ── Top bar (internal tab navigation) ── */
+.cpi-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0 1rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.cpi-tab-bar {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.cpi-tab-btn {
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--txt2);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.cpi-tab-btn:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+.cpi-tab-btn--active {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+
+.cpi-last-updated {
+  font-size: 0.72rem;
+  color: var(--txt3);
+}
+
+/* ── Content area ── */
+.cpi-content {
+  padding-top: 0.25rem;
+}
+
+/* ── Loading / Error ── */
+.cpi-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 4rem 2rem;
+  color: var(--txt2);
+  font-size: 0.9rem;
+}
+
+.cpi-loading__spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: cpi-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes cpi-spin { to { transform: rotate(360deg); } }
+
+.cpi-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: rgba(var(--red-rgb, 200 16 46) / 0.1);
+  border: 1px solid var(--red);
+  color: var(--red);
+  font-size: 0.85rem;
+  margin: 2rem 0;
+}
+
+/* ── Card ── */
+.cpi-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+}
+
+.cpi-card__title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--txt3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+/* ── Metric grid ── */
+.cpi-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.cpi-metric-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.cpi-metric-card__label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--txt3);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.cpi-metric-card__value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--txt);
+  line-height: 1.1;
+}
+
+.cpi-metric-card__sub {
+  font-size: 0.7rem;
+  margin-top: 4px;
+  color: var(--txt3);
+}
+.cpi-metric-card__sub--good { color: var(--accent); }
+.cpi-metric-card__sub--warn { color: var(--yellow); }
+.cpi-metric-card__sub--bad  { color: var(--red); }
+
+/* ── Chips ── */
+.cpi-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.cpi-chip--blue   { background: rgba(88,166,255,0.15);  color: var(--blue); }
+.cpi-chip--green  { background: rgba(63,185,80,0.15);   color: var(--accent); }
+.cpi-chip--amber  { background: rgba(227,179,65,0.15);  color: var(--yellow); }
+.cpi-chip--red    { background: rgba(248,81,73,0.15);   color: var(--red); }
+.cpi-chip--gray   { background: var(--bg3);              color: var(--txt3); }
+
+/* ── Data table ── */
+.cpi-table-wrap { overflow-x: auto; }
+
+.cpi-data-table {
+  width: 100%;
+  font-size: 0.78rem;
+  border-collapse: collapse;
+}
+
+.cpi-data-table th {
+  background: var(--blue);
+  color: #fff;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  white-space: nowrap;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.cpi-data-table th:first-child { border-radius: 4px 0 0 0; }
+.cpi-data-table th:last-child  { border-radius: 0 4px 0 0; }
+
+.cpi-data-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--txt);
+  vertical-align: middle;
+}
+.cpi-data-table tr:last-child td { border-bottom: none; }
+.cpi-data-table tbody tr:hover td { background: var(--bg2); }
+.cpi-data-table .col-num { text-align: right; font-variant-numeric: tabular-nums; }
+.cpi-data-table .col-bold { font-weight: 600; }
+
+/* ── Report coverage rows ── */
+.cpi-report-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.cpi-report-row:last-child { border-bottom: none; }
+.cpi-report-row__name  { font-size: 0.82rem; font-weight: 500; color: var(--txt); }
+.cpi-report-row__month { font-size: 0.7rem; color: var(--txt3); margin-left: 8px; }
+.cpi-report-row__chips { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* ── Domain pills ── */
+.cpi-domain-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.cpi-domain-pill {
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 0.78rem;
+  cursor: pointer;
+  background: var(--card-bg);
+  color: var(--txt2);
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.cpi-domain-pill:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+.cpi-domain-pill--active {
+  background: var(--blue);
+  color: #fff;
+  border-color: var(--blue);
+}
+
+/* ── Buttons ── */
+.cpi-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  white-space: nowrap;
+}
+.cpi-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.cpi-btn--primary { background: var(--blue); color: #fff; }
+.cpi-btn--primary:hover:not(:disabled) { filter: brightness(1.1); }
+
+.cpi-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: cpi-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+/* ── Section row ── */
+.cpi-section-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.cpi-section-row__title { font-size: 0.95rem; font-weight: 600; color: var(--txt); }
+
+/* ── Two-column layout ── */
+.cpi-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* ── Inference blocks ── */
+.cpi-inference-block {
+  border-left: 3px solid var(--blue);
+  padding: 10px 14px;
+  background: rgba(88,166,255,0.07);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 0.75rem;
+}
+.cpi-inference-block__label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--blue);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.cpi-inference-block__text {
+  font-size: 0.78rem;
+  line-height: 1.65;
+  color: var(--txt);
+}
+
+/* ── Action blocks ── */
+.cpi-action-block {
+  border-left: 3px solid var(--accent);
+  padding: 10px 14px;
+  background: rgba(63,185,80,0.07);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 0.75rem;
+}
+.cpi-action-block__label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.cpi-action-block__text {
+  font-size: 0.78rem;
+  line-height: 1.65;
+  color: var(--txt);
+}
+
+/* ── Empty state ── */
+.cpi-empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: var(--txt3);
+}
+.cpi-empty-state__icon {
+  display: block;
+  margin: 0 auto 1rem;
+  opacity: 0.4;
+}
+.cpi-empty-state__title {
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--txt2);
+}
+.cpi-empty-state__sub { font-size: 0.82rem; }
+
+/* ── No-data placeholder inside chart area ── */
+.cpi-no-data {
+  font-size: 0.78rem;
+  color: var(--txt3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+/* ── Row flex ── */
+.cpi-row-flex {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0;
+}
+
+/* ── Form controls ── */
+.cpi-form-group { display: flex; flex-direction: column; gap: 4px; }
+
+.cpi-form-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--txt3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cpi-form-select {
+  padding: 6px 28px 6px 10px;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--txt);
+  font-size: 0.82rem;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.cpi-form-select:focus {
+  outline: none;
+  border-color: var(--blue);
+}
+
+/* ── CPI metric tab chips (trend controls) ── */
+.cpi-tab-chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.cpi-tab-chip {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--card-bg);
+  color: var(--txt2);
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.cpi-tab-chip:hover { border-color: var(--blue); color: var(--blue); }
+.cpi-tab-chip--active { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+/* ── Chart legend ── */
+.cpi-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+.cpi-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  color: var(--txt2);
+}
+.cpi-legend__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ── Advanced pivot builder ── */
+.cpi-pivot-summary {
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--txt3);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--border);
+  user-select: none;
+}
+.cpi-pivot-summary::-webkit-details-marker { display: none; }
+
+.cpi-details-arrow {
+  margin-left: auto;
+  transition: transform 0.2s ease;
+}
+details[open] .cpi-details-arrow { transform: rotate(180deg); }
+
+.cpi-pivot-builder {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.cpi-pivot-zone {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  min-height: 72px;
+  background: var(--bg2);
+}
+.cpi-pivot-zone__label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--txt3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+.cpi-pivot-zone__label--rows { color: var(--blue); }
+.cpi-pivot-zone__label--cols { color: var(--purple); }
+.cpi-pivot-zone__label--vals { color: var(--accent); }
+.cpi-pivot-zone__hint { font-size: 0.68rem; color: var(--txt3); font-style: italic; }
+
+.cpi-pivot-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+
+.cpi-pivot-chip {
+  font-size: 0.68rem;
+  padding: 3px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  border: 1px solid;
+  transition: all 0.15s;
+  user-select: none;
+}
+.cpi-pivot-chip--available { background: var(--card-bg); border-color: var(--border2); color: var(--txt2); }
+.cpi-pivot-chip--available:hover { border-color: var(--blue); color: var(--blue); }
+.cpi-pivot-chip--row { background: rgba(88,166,255,0.1);  border-color: var(--blue);   color: var(--blue); }
+.cpi-pivot-chip--col { background: rgba(188,140,255,0.1); border-color: var(--purple); color: var(--purple); }
+.cpi-pivot-chip--val { background: rgba(63,185,80,0.1);   border-color: var(--accent); color: var(--accent); }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .cpi-two-col { grid-template-columns: 1fr; }
+  .cpi-pivot-builder { grid-template-columns: 1fr; }
+  .cpi-legend { justify-content: flex-start; }
+  .cpi-topbar { flex-direction: column; align-items: flex-start; }
+}
