@@ -1,7 +1,15 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import './Navbar.css'
 
 export default function Navbar({ onToggleSidebar }) {
+  const location = useLocation()
+  const showUploadPortal = location.pathname === '/genai-reports' || 
+                          location.pathname.startsWith('/weekly-status') ||
+                          location.pathname.startsWith('/sprint-productivity') ||
+                          location.pathname.startsWith('/copilot-vs-git') ||
+                          location.pathname.startsWith('/batch-flow') ||
+                          location.pathname.startsWith('/upload')
+
   return (
     <nav className="navbar">
       <div className="navbar-left">
@@ -9,18 +17,20 @@ export default function Navbar({ onToggleSidebar }) {
           ☰
         </button>
         <NavLink to="/" className="navbar-brand">
-          GenAI Metrics
+          Flex 2.0 Tools
         </NavLink>
       </div>
       <div className="navbar-right">
-        <NavLink
-          to="/upload"
-          className={({ isActive }) =>
-            `upload-btn ${isActive ? 'active' : ''}`
-          }
-        >
-          Upload Portal
-        </NavLink>
+        {showUploadPortal && (
+          <NavLink
+            to="/upload"
+            className={({ isActive }) =>
+              `upload-btn ${isActive ? 'active' : ''}`
+            }
+          >
+            Upload Portal
+          </NavLink>
+        )}
       </div>
     </nav>
   )

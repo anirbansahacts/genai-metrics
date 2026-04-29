@@ -1,16 +1,33 @@
 import { useState, useRef } from 'react'
 import './UploadPortal.css'
-
+ 
 const UPLOAD_PASSWORD = 'genai2024'
-
+ 
+const apps = [
+  {
+    id: 'weekly-status',
+    title: 'Weekly Status Report',
+    icon: '',
+  },
+  {
+    id: 'sprint-productivity',
+    title: 'Sprint Productivity',
+    icon: '',
+  },
+  {
+    id: 'copilot-vs-git',
+    title: 'Copilot vs Git Analytics',
+    icon: '',
+  },
+]
+ 
 export default function UploadPortal() {
   const [authenticated, setAuthenticated] = useState(false)
   const [passwordInput, setPasswordInput] = useState('')
   const [authError, setAuthError] = useState('')
-  const [dragOver, setDragOver] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState([])
-  const fileInputRef = useRef(null)
-
+  const fileInputRefs = useRef(apps.reduce((acc, app) => ({ ...acc, [app.id]: null }), {}))
+ 
   function handleLogin(e) {
     e.preventDefault()
     if (passwordInput === UPLOAD_PASSWORD) {
@@ -21,32 +38,27 @@ export default function UploadPortal() {
       setPasswordInput('')
     }
   }
-
-  function handleFiles(files) {
+ 
+  function handleFiles(files, appId) {
     const newFiles = Array.from(files).map((file) => ({
       name: file.name,
       size: (file.size / 1024).toFixed(1) + ' KB',
       type: file.type || 'unknown',
       addedAt: new Date().toLocaleTimeString(),
+      app: apps.find(app => app.id === appId)?.title || 'Unknown',
     }))
     setUploadedFiles((prev) => [...prev, ...newFiles])
   }
-
-  function handleDrop(e) {
-    e.preventDefault()
-    setDragOver(false)
-    handleFiles(e.dataTransfer.files)
-  }
-
-  function handleFileInputChange(e) {
-    handleFiles(e.target.files)
+ 
+  function handleFileInputChange(e, appId) {
+    handleFiles(e.target.files, appId)
     e.target.value = ''
   }
-
+ 
   function removeFile(index) {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index))
   }
-
+ 
   if (!authenticated) {
     return (
       <div className="upload-portal">
@@ -70,7 +82,7 @@ export default function UploadPortal() {
       </div>
     )
   }
-
+ 
   return (
     <div className="upload-portal">
       <div className="upload-header">
@@ -80,29 +92,65 @@ export default function UploadPortal() {
           Lock Portal
         </button>
       </div>
-
-      <div
-        className={`drop-zone ${dragOver ? 'drag-over' : ''}`}
-        onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={handleDrop}
-        onClick={() => fileInputRef.current.click()}
-      >
-        <div className="drop-zone-content">
-          <span className="drop-icon">📂</span>
-          <p>Drag &amp; drop files here, or click to select</p>
-          <span className="drop-hint">Supports .xlsx, .csv, .json</span>
-        </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          accept=".xlsx,.csv,.json"
-          onChange={handleFileInputChange}
-          style={{ display: 'none' }}
-        />
+ 
+      <div className="upload-apps-list">
+        {apps.map((app) => (
+          <div key={app.id} className="upload-app-item">
+            {app.multipleFiles ? (
+              // BatchFlow with separate title and horizontal uploads
+              <>
+                <div className="app-info">
+                  <span className="upload-app-icon">{app.icon}</span>
+                  <h3>{app.title}</h3>
+                </div>
+                <div className="batch-flow-uploads">
+                  {app.multipleFiles.map((fileType) => (
+                    <div key={fileType.id} className="file-upload-column">
+                      <span className="file-type-label">{fileType.label}</span>
+                      <button
+                        className="upload-btn"
+                        onClick={() => fileInputRefs.current[`${app.id}-${fileType.id}`]?.click()}
+                      >
+                        Upload
+                      </button>
+                      <input
+                        ref={(el) => fileInputRefs.current[`${app.id}-${fileType.id}`] = el}
+                        type="file"
+                        accept=".xlsx,.csv,.json"
+                        onChange={(e) => handleFileInputChange(e, `${app.id}-${fileType.id}`)}
+                        style={{ display: 'none' }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              // Regular containers with inline title and upload button
+              <div className="app-info-inline">
+                <div className="app-title-section">
+                  <span className="upload-app-icon">{app.icon}</span>
+                  <h3>{app.title}</h3>
+                </div>
+                <button
+                  className="upload-btn"
+                  onClick={() => fileInputRefs.current[app.id]?.click()}
+                >
+                  Upload Files
+                </button>
+                <input
+                  ref={(el) => fileInputRefs.current[app.id] = el}
+                  type="file"
+                  multiple
+                  accept=".xlsx,.csv,.json"
+                  onChange={(e) => handleFileInputChange(e, app.id)}
+                  style={{ display: 'none' }}
+                />
+              </div>
+            )}
+          </div>
+        ))}
       </div>
-
+ 
       {uploadedFiles.length > 0 && (
         <div className="file-list">
           <h2>Uploaded Files ({uploadedFiles.length})</h2>

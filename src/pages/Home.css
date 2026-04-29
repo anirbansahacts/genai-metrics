@@ -53,6 +53,10 @@
   line-height: 1;
 }
 
+.app-card-icon:empty {
+  display: none;
+}
+
 .app-card h2 {
   font-size: 1rem;
   font-weight: 600;
